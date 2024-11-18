@@ -12,7 +12,7 @@ import { setupCronJobs } from "./cron.js";
 import { config } from "./config.js";
 import { testConnection } from "./db.js";
 import { initDBAuthState } from "./sessionStore.js";
-import { startWebServer, updateQR, clearQR, setConnected, setDisconnected } from "./web.js";
+import { startWebServer, updateQR, clearQR, setConnected, setDisconnected, setSocketInstance, clearPairingCode } from "./web.js";
 
 const logger = pino({ level: "silent" });
 const isRailway = process.env.RAILWAY_ENVIRONMENT !== undefined;
@@ -60,6 +60,8 @@ async function connectToWhatsApp() {
     markOnlineOnConnect: true,
   });
 
+  setSocketInstance(sock);
+
   sock.ev.on("creds.update", async (creds) => {
     state.creds = creds;
     await saveCreds();
@@ -84,6 +86,7 @@ async function connectToWhatsApp() {
     if (connection === "close") {
       setDisconnected();
       clearQR();
+      clearPairingCode();
       
       const shouldReconnect =
         lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
