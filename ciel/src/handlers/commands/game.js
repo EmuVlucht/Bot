@@ -425,12 +425,120 @@ ${win ? `🎉 Menang! +${bet * 5}` : `😔 Kalah! -${bet}`}
 Saldo: ${user.money + profit}`);
 };
 
+const SUIT_CHOICES = {
+    'kertas': { emoji: '📄', tier: 1 },
+    'gunting': { emoji: '✂️', tier: 1 },
+    'batu': { emoji: '🗿', tier: 1 },
+    'es': { emoji: '❄️', tier: 2 },
+    'manusia': { emoji: '🧑', tier: 2 },
+    'air': { emoji: '💧', tier: 2 },
+    'zombie': { emoji: '🧟', tier: 2 },
+    'udara': { emoji: '🌪️', tier: 2 },
+    'robot': { emoji: '🤖', tier: 2 },
+    'api': { emoji: '🔥', tier: 2 },
+    'laser': { emoji: '💥', tier: 2 },
+    'petir': { emoji: '⚡', tier: 2 },
+    'naga': { emoji: '🐉', tier: 2 },
+    'sihir': { emoji: '✨', tier: 2 },
+    'alien': { emoji: '👽', tier: 2 },
+    'spons': { emoji: '🧽', tier: 3 },
+    'virus': { emoji: '🦠', tier: 4 },
+    'ular': { emoji: '🐍', tier: 3 },
+    'hacker': { emoji: '🧑‍💻', tier: 4 },
+    'pohon': { emoji: '🌳', tier: 3 },
+    'shadow': { emoji: '👤', tier: 4 },
+    'serigala': { emoji: '🐺', tier: 3 },
+    'crystal': { emoji: '💎', tier: 4 },
+    'iblis': { emoji: '😈', tier: 3 },
+    'time': { emoji: '⏳', tier: 4 },
+    'senjata': { emoji: '🔫', tier: 3 },
+    'queen': { emoji: '👑', tier: 4 }
+};
+
+const SUIT_WINS = {
+    'kertas': ['batu', 'air', 'udara', 'spons', 'pohon', 'manusia', 'zombie', 'virus', 'crystal', 'es', 'robot', 'alien', 'hacker'],
+    'gunting': ['kertas', 'udara', 'pohon', 'ular', 'manusia', 'spons', 'zombie', 'virus', 'shadow', 'air', 'hacker', 'alien', 'crystal'],
+    'batu': ['gunting', 'api', 'es', 'ular', 'serigala', 'laser', 'senjata', 'robot', 'iblis', 'naga', 'spons', 'virus', 'zombie'],
+    'es': ['air', 'manusia', 'zombie', 'udara', 'naga', 'pohon', 'ular', 'spons', 'serigala', 'iblis', 'virus', 'shadow', 'hacker'],
+    'manusia': ['pohon', 'serigala', 'ular', 'spons', 'air', 'udara', 'api', 'petir', 'laser', 'sihir', 'batu', 'es', 'naga'],
+    'air': ['api', 'laser', 'batu', 'robot', 'senjata', 'iblis', 'serigala', 'ular', 'pohon', 'spons', 'virus', 'naga', 'petir'],
+    'zombie': ['pohon', 'serigala', 'spons', 'manusia', 'ular', 'udara', 'api', 'senjata', 'laser', 'robot', 'naga', 'petir', 'sihir'],
+    'udara': ['api', 'virus', 'petir', 'laser', 'senjata', 'robot', 'iblis', 'serigala', 'ular', 'spons', 'pohon', 'naga', 'sihir'],
+    'robot': ['manusia', 'zombie', 'serigala', 'iblis', 'senjata', 'ular', 'spons', 'pohon', 'naga', 'petir', 'sihir', 'api', 'es'],
+    'api': ['es', 'pohon', 'ular', 'zombie', 'iblis', 'spons', 'serigala', 'kertas', 'gunting', 'virus', 'shadow', 'crystal', 'hacker'],
+    'laser': ['robot', 'alien', 'iblis', 'crystal', 'senjata', 'shadow', 'time', 'queen', 'manusia', 'zombie', 'serigala', 'ular', 'spons'],
+    'petir': ['air', 'robot', 'naga', 'alien', 'senjata', 'laser', 'iblis', 'serigala', 'ular', 'spons', 'pohon', 'crystal', 'shadow'],
+    'naga': ['api', 'iblis', 'serigala', 'senjata', 'manusia', 'zombie', 'ular', 'spons', 'pohon', 'alien', 'hacker', 'virus', 'shadow'],
+    'sihir': ['alien', 'naga', 'iblis', 'shadow', 'time', 'hacker', 'virus', 'crystal', 'queen', 'manusia', 'zombie', 'serigala', 'ular'],
+    'alien': ['robot', 'manusia', 'zombie', 'hacker', 'virus', 'serigala', 'ular', 'spons', 'pohon', 'iblis', 'senjata', 'crystal', 'shadow'],
+    'spons': ['air', 'udara', 'virus', 'api', 'petir', 'laser', 'time', 'queen', 'hacker', 'crystal', 'shadow', 'sihir', 'alien'],
+    'virus': ['manusia', 'zombie', 'alien', 'robot', 'serigala', 'ular', 'pohon', 'time', 'queen', 'iblis', 'senjata', 'naga', 'petir'],
+    'ular': ['spons', 'pohon', 'manusia', 'zombie', 'hacker', 'virus', 'shadow', 'crystal', 'time', 'queen', 'iblis', 'senjata', 'naga'],
+    'hacker': ['robot', 'alien', 'crystal', 'laser', 'senjata', 'time', 'queen', 'iblis', 'naga', 'petir', 'manusia', 'zombie', 'serigala'],
+    'pohon': ['air', 'batu', 'udara', 'es', 'crystal', 'petir', 'sihir', 'alien', 'naga', 'time', 'queen', 'iblis', 'senjata'],
+    'shadow': ['manusia', 'alien', 'virus', 'hacker', 'zombie', 'serigala', 'ular', 'spons', 'pohon', 'iblis', 'senjata', 'naga', 'petir'],
+    'serigala': ['manusia', 'ular', 'spons', 'pohon', 'zombie', 'virus', 'shadow', 'crystal', 'time', 'queen', 'iblis', 'senjata', 'naga'],
+    'crystal': ['es', 'laser', 'time', 'shadow', 'iblis', 'senjata', 'naga', 'petir', 'manusia', 'zombie', 'serigala', 'ular', 'spons'],
+    'iblis': ['manusia', 'zombie', 'serigala', 'shadow', 'ular', 'spons', 'pohon', 'time', 'queen', 'hacker', 'virus', 'crystal', 'alien'],
+    'time': ['naga', 'alien', 'sihir', 'shadow', 'hacker', 'virus', 'crystal', 'manusia', 'zombie', 'serigala', 'ular', 'spons', 'pohon'],
+    'senjata': ['manusia', 'zombie', 'ular', 'serigala', 'naga', 'spons', 'pohon', 'virus', 'shadow', 'crystal', 'time', 'queen', 'hacker'],
+    'queen': ['iblis', 'senjata', 'time', 'crystal', 'shadow', 'hacker', 'virus', 'naga', 'petir', 'sihir', 'alien', 'robot', 'laser']
+};
+
+const getSuitMenu = () => {
+    return `*✊✋✌️ SUIT GAME*
+
+Silahkan pilih
+
+╔═══════「𝗧𝗮𝗵𝗮𝗽 𝟭」═════════╗
+║  Kertas📄  Gunting✂️  Batu🗿          ║
+╚════════════════════════╝
+╔═══════「𝗧𝗮𝗵𝗮𝗽 𝟮」═════════╗
+║              Es❄️  ≼─│─≽  Manusia🧑     ║
+║              Air💧  ≼─│─≽  Zombie🧟      ║
+║         Udara🌪️  ≼─│─≽  Robot🤖        ║
+║             Api🔥  ≼─│─≽  Laser💥         ║
+║           Petir⚡  ≼─│─≽  Naga🐉         ║
+║           Sihir✨  ≼─│─≽  Alien👽          ║
+╚════════════════════════╝
+╔═「𝗧𝗮𝗵𝗮𝗽 𝟯」═══「𝗧𝗮𝗵𝗮𝗽 𝟰」════╗
+║╭──────────────────────╮║
+║│─≽  Spons🧽     ║   Virus🦠      ≼─│║
+║│─≽  Ular🐍         ║    Hacker🧑‍💻  ≼─│║
+║│─≽  Pohon🌳     ║   Shadow👤 ≼─│║
+║│─≽  Serigala🐺  ║   Crystal💎   ≼─│║
+║│─≽  Iblis😈         ║   Time⏳      ≼─│║
+║│─≽  Senjata🔫   ║   Queen👑    ≼─│║
+║╰──────────────────────╯║
+╚════════════════════════╝
+
+Contoh: .suit batu 1000`;
+};
+
+const checkSuitWin = (player, opponent) => {
+    if (player === opponent) return 'draw';
+    if (SUIT_WINS[player]?.includes(opponent)) return 'win';
+    return 'lose';
+};
+
+const SUIT_ALIASES = {
+    'r': 'batu',
+    'p': 'kertas', 
+    's': 'gunting',
+    'rock': 'batu',
+    'paper': 'kertas',
+    'scissors': 'gunting'
+};
+
 const rps = async (conn, m, { args, user }) => {
-    const choices = ['rock', 'paper', 'scissors', 'r', 'p', 's', 'batu', 'kertas', 'gunting'];
-    const choice = args[0]?.toLowerCase();
+    let choice = args[0]?.toLowerCase();
     
-    if (!choices.includes(choice)) {
-        return m.reply('Pilih rock/paper/scissors!\nContoh: .rps rock 100');
+    if (SUIT_ALIASES[choice]) {
+        choice = SUIT_ALIASES[choice];
+    }
+    
+    if (!choice || !SUIT_CHOICES[choice]) {
+        return m.reply(getSuitMenu());
     }
     
     const bet = parseInt(args[1]) || 100;
@@ -438,26 +546,19 @@ const rps = async (conn, m, { args, user }) => {
     if (bet < 100) return m.reply('Minimal taruhan 100!');
     if (bet > user.money) return m.reply(`Uang kamu tidak cukup!\nUang: ${user.money}`);
     
-    const normalize = (c) => {
-        if (['r', 'rock', 'batu'].includes(c)) return 'rock';
-        if (['p', 'paper', 'kertas'].includes(c)) return 'paper';
-        return 'scissors';
-    };
+    const allChoices = Object.keys(SUIT_CHOICES);
+    const botChoice = allChoices[Math.floor(Math.random() * allChoices.length)];
     
-    const userChoice = normalize(choice);
-    const botChoice = ['rock', 'paper', 'scissors'][Math.floor(Math.random() * 3)];
+    const userEmoji = SUIT_CHOICES[choice].emoji;
+    const botEmoji = SUIT_CHOICES[botChoice].emoji;
     
-    const emojis = { rock: '🪨', paper: '📄', scissors: '✂️' };
+    const outcome = checkSuitWin(choice, botChoice);
     
     let result, profit;
-    if (userChoice === botChoice) {
-        result = 'Seri!';
+    if (outcome === 'draw') {
+        result = '🤝 Seri!';
         profit = 0;
-    } else if (
-        (userChoice === 'rock' && botChoice === 'scissors') ||
-        (userChoice === 'paper' && botChoice === 'rock') ||
-        (userChoice === 'scissors' && botChoice === 'paper')
-    ) {
+    } else if (outcome === 'win') {
         result = '🎉 Menang!';
         profit = bet;
     } else {
@@ -467,10 +568,10 @@ const rps = async (conn, m, { args, user }) => {
     
     await updateUser(m.sender, { money: { increment: profit } });
     
-    m.reply(`*✊✋✌️ Rock Paper Scissors*
+    m.reply(`*✊✋✌️ SUIT GAME*
 
-Kamu: ${emojis[userChoice]} ${userChoice}
-Bot: ${emojis[botChoice]} ${botChoice}
+Kamu: ${userEmoji} ${choice.charAt(0).toUpperCase() + choice.slice(1)}
+Bot: ${botEmoji} ${botChoice.charAt(0).toUpperCase() + botChoice.slice(1)}
 
 ${result}
 ${profit !== 0 ? (profit > 0 ? `+${profit}` : profit) : ''}
@@ -803,6 +904,129 @@ Saldo: ${user.money - price}`);
 const beli = buylimit;
 const buy = buylimit;
 
+const suitpvp = async (conn, m, { args, user }) => {
+    if (!m.isGroup) return m.reply(settings.messages.group);
+    
+    const target = m.mentionedJid[0];
+    if (!target) return m.reply(`*✊✋✌️ SUIT PVP*
+
+Tag lawan untuk bermain Suit PVP!
+Contoh: .suitpvp @user 1000
+
+${getSuitMenu()}`);
+    
+    if (target === m.sender) return m.reply('Tidak bisa bermain dengan diri sendiri!');
+    
+    const existingGame = await getActiveGame(m.chat, 'suitpvp');
+    if (existingGame) return m.reply('Masih ada game Suit PVP yang berjalan! Selesaikan dulu atau tunggu timeout.');
+    
+    const bet = parseInt(args[1]) || 500;
+    
+    if (bet < 100) return m.reply('Minimal taruhan 100!');
+    if (bet > user.money) return m.reply(`Uang kamu tidak cukup!\nUang: ${user.money}`);
+    
+    const targetUser = await getOrCreateUser(target, null);
+    if (!targetUser) return m.reply('Target tidak terdaftar!');
+    if (bet > targetUser.money) return m.reply(`Uang lawan tidak cukup!\nUang lawan: ${targetUser.money}`);
+    
+    const gameData = {
+        player1: m.sender,
+        player2: target,
+        bet: bet,
+        choice1: null,
+        choice2: null,
+        timestamp: Date.now()
+    };
+    
+    await createActiveGame(m.chat, 'suitpvp', gameData, [m.sender, target], 5);
+    
+    m.reply(`*✊✋✌️ SUIT PVP*
+
+@${m.sender.split('@')[0]} menantang @${target.split('@')[0]}!
+Taruhan: ${bet} uang
+
+${getSuitMenu()}
+
+Balas dengan pilihan kalian (dalam 5 menit)!
+Contoh: batu / kertas / gunting / dll`, { mentions: [m.sender, target] });
+};
+
+const suitpvpanswer = async (conn, m, { user }) => {
+    let text = m.text?.toLowerCase().trim();
+    
+    if (SUIT_ALIASES[text]) {
+        text = SUIT_ALIASES[text];
+    }
+    
+    if (!text || !SUIT_CHOICES[text]) return;
+    
+    const game = await getActiveGame(m.chat, 'suitpvp');
+    if (!game) return;
+    
+    const gameData = game.gameData;
+    
+    if (m.sender !== gameData.player1 && m.sender !== gameData.player2) return;
+    
+    if (m.sender === gameData.player1) {
+        if (gameData.choice1) return;
+        gameData.choice1 = text;
+        await updateActiveGame(m.chat, 'suitpvp', gameData);
+        await conn.sendMessage(m.sender, { text: `Pilihan kamu: ${SUIT_CHOICES[text].emoji} ${text}\nMenunggu lawan memilih...` });
+    } else {
+        if (gameData.choice2) return;
+        gameData.choice2 = text;
+        await updateActiveGame(m.chat, 'suitpvp', gameData);
+        await conn.sendMessage(m.sender, { text: `Pilihan kamu: ${SUIT_CHOICES[text].emoji} ${text}\nMenunggu lawan memilih...` });
+    }
+    
+    if (gameData.choice1 && gameData.choice2) {
+        await deleteActiveGame(m.chat, 'suitpvp');
+        
+        const p1Choice = gameData.choice1;
+        const p2Choice = gameData.choice2;
+        const p1Emoji = SUIT_CHOICES[p1Choice].emoji;
+        const p2Emoji = SUIT_CHOICES[p2Choice].emoji;
+        
+        const outcome = checkSuitWin(p1Choice, p2Choice);
+        
+        let resultText, winner, loser;
+        
+        if (outcome === 'draw') {
+            resultText = '🤝 *SERI!*\nTaruhan dikembalikan.';
+        } else if (outcome === 'win') {
+            winner = gameData.player1;
+            loser = gameData.player2;
+            await updateUser(winner, { money: { increment: gameData.bet } });
+            await updateUser(loser, { money: { decrement: gameData.bet } });
+            resultText = `🎉 *@${winner.split('@')[0]} MENANG!*\n\n+${gameData.bet} uang`;
+        } else {
+            winner = gameData.player2;
+            loser = gameData.player1;
+            await updateUser(winner, { money: { increment: gameData.bet } });
+            await updateUser(loser, { money: { decrement: gameData.bet } });
+            resultText = `🎉 *@${winner.split('@')[0]} MENANG!*\n\n+${gameData.bet} uang`;
+        }
+        
+        m.reply(`*✊✋✌️ SUIT PVP - HASIL*
+
+@${gameData.player1.split('@')[0]}: ${p1Emoji} ${p1Choice.charAt(0).toUpperCase() + p1Choice.slice(1)}
+@${gameData.player2.split('@')[0]}: ${p2Emoji} ${p2Choice.charAt(0).toUpperCase() + p2Choice.slice(1)}
+
+${resultText}`, { mentions: [gameData.player1, gameData.player2] });
+    }
+};
+
+const deletesuitpvp = async (conn, m, { isOwner }) => {
+    if (!m.isGroup) return m.reply(settings.messages.group);
+    if (!m.isAdmin && !isOwner) return m.reply(settings.messages.admin);
+    
+    const game = await getActiveGame(m.chat, 'suitpvp');
+    if (!game) return m.reply('Tidak ada game Suit PVP yang berjalan!');
+    
+    await deleteActiveGame(m.chat, 'suitpvp');
+    m.reply('Game Suit PVP telah dihapus!');
+};
+
 module.exports = {
     tictactoe,
     ttt,
@@ -838,5 +1062,10 @@ module.exports = {
     begal,
     buylimit,
     beli,
-    buy
+    buy,
+    suitpvp,
+    suitpvpanswer,
+    deletesuitpvp,
+    SUIT_CHOICES,
+    SUIT_ALIASES
 };
