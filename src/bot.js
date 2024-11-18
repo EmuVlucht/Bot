@@ -243,45 +243,7 @@ async function handleLoopCommand(sock, chatId, cmd) {
 function getMessageContent(msg) {
   const message = msg.message;
 
-  if (message.conversation) {
-    return { type: "text", text: message.conversation };
-  }
-  if (message.extendedTextMessage) {
-    return { type: "text", text: message.extendedTextMessage.text };
-  }
-  if (message.imageMessage) {
-    return {
-      type: "image",
-      text: message.imageMessage.caption || "",
-      viewOnce: message.imageMessage.viewOnce,
-    };
-  }
-  if (message.videoMessage) {
-    if (message.videoMessage.gifPlayback) {
-      return { type: "gif", text: "" };
-    }
-    return {
-      type: "video",
-      text: message.videoMessage.caption || "",
-      viewOnce: message.videoMessage.viewOnce,
-    };
-  }
-  if (message.audioMessage) {
-    return {
-      type: "audio",
-      text: "",
-      viewOnce: message.audioMessage.viewOnce,
-      ptt: message.audioMessage.ptt,
-    };
-  }
-  if (message.documentMessage) {
-    const mimetype = message.documentMessage.mimetype || "";
-    const isMedia = /mp4|mp3|jpg|jpeg|png/i.test(mimetype);
-    return { type: isMedia ? "media" : "doc", text: message.documentMessage.caption || "" };
-  }
-  if (message.stickerMessage) {
-    return { type: "sticker", text: "" };
-  }
+  // CHECK VIEW-ONCE WRAPPERS FIRST
   if (message.viewOnceMessage) {
     const innerMsg = message.viewOnceMessage.message;
     if (innerMsg?.imageMessage) {
@@ -303,6 +265,49 @@ function getMessageContent(msg) {
       return { type: "viewOnce", text: "", viewOnce: true, isVideo: true };
     }
     return { type: "viewOnce", text: "", viewOnce: true };
+  }
+
+  if (message.conversation) {
+    return { type: "text", text: message.conversation };
+  }
+  if (message.extendedTextMessage) {
+    return { type: "text", text: message.extendedTextMessage.text };
+  }
+  if (message.imageMessage) {
+    const hasViewOnce = message.imageMessage.viewOnce;
+    return {
+      type: "image",
+      text: message.imageMessage.caption || "",
+      viewOnce: hasViewOnce,
+    };
+  }
+  if (message.videoMessage) {
+    if (message.videoMessage.gifPlayback) {
+      return { type: "gif", text: "" };
+    }
+    const hasViewOnce = message.videoMessage.viewOnce;
+    return {
+      type: "video",
+      text: message.videoMessage.caption || "",
+      viewOnce: hasViewOnce,
+    };
+  }
+  if (message.audioMessage) {
+    const hasViewOnce = message.audioMessage.viewOnce;
+    return {
+      type: "audio",
+      text: "",
+      viewOnce: hasViewOnce,
+      ptt: message.audioMessage.ptt,
+    };
+  }
+  if (message.documentMessage) {
+    const mimetype = message.documentMessage.mimetype || "";
+    const isMedia = /mp4|mp3|jpg|jpeg|png/i.test(mimetype);
+    return { type: isMedia ? "media" : "doc", text: message.documentMessage.caption || "" };
+  }
+  if (message.stickerMessage) {
+    return { type: "sticker", text: "" };
   }
   if (message.protocolMessage) {
     if (message.protocolMessage.type === 0) {
