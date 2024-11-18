@@ -92,3 +92,63 @@ export function isOwner(sender, ownerNumber) {
   const cleanOwner = ownerNumber.replace(/[^0-9]/g, "");
   return cleanSender === cleanOwner;
 }
+
+export function parseLoopTime(timeStr) {
+  const trimmed = timeStr.trim();
+  
+  const smallICount = (trimmed.match(/ì/g) || []).length;
+  if (smallICount > 0 && trimmed === "ì".repeat(smallICount)) {
+    return smallICount * 60 * 1000;
+  }
+  
+  const bigIUmlautCount = (trimmed.match(/Ï/g) || []).length;
+  if (bigIUmlautCount > 0 && trimmed === "Ï".repeat(bigIUmlautCount)) {
+    return bigIUmlautCount * 10 * 60 * 1000;
+  }
+  
+  const smallILatinCount = (trimmed.match(/i/g) || []).length;
+  if (smallILatinCount > 0 && trimmed === "i".repeat(smallILatinCount)) {
+    return smallILatinCount * 30 * 60 * 1000;
+  }
+  
+  const bigICount = (trimmed.match(/I/g) || []).length;
+  if (bigICount > 0 && trimmed === "I".repeat(bigICount)) {
+    return bigICount * 60 * 60 * 1000;
+  }
+  
+  return null;
+}
+
+export function parseLoopCommand(text) {
+  const stopMatch = text.match(/^∅\s*[:;]\s*0$/);
+  if (stopMatch) {
+    return { type: "stop" };
+  }
+  
+  const loopMatch = text.match(/^([ìÏiI]+)\s*;\s*(.+)$/s);
+  if (loopMatch) {
+    const timeStr = loopMatch[1];
+    const message = loopMatch[2].trim();
+    const intervalMs = parseLoopTime(timeStr);
+    
+    if (intervalMs && message) {
+      return { type: "start", intervalMs, message };
+    }
+  }
+  
+  return null;
+}
+
+export function formatInterval(ms) {
+  const minutes = Math.floor(ms / (60 * 1000));
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  
+  if (hours > 0 && remainingMinutes > 0) {
+    return `${hours} jam ${remainingMinutes} menit`;
+  } else if (hours > 0) {
+    return `${hours} jam`;
+  } else {
+    return `${minutes} menit`;
+  }
+}

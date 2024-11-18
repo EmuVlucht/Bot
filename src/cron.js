@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import { config, formatOwnerJid } from "./config.js";
-import { getAllGroupsData, getAllActiveLiveMessages, getGroupData, stopLiveMessage } from "./storage.js";
+import { getAllGroupsData, getAllActiveLiveMessages, getGroupData, stopLiveMessage, getDueLoopMessages, updateLoopMessageNextSend } from "./storage.js";
 import { formatAllGroupsData, formatCheckpointData } from "./utils.js";
 
 export function setupCronJobs(sock) {
@@ -22,6 +22,12 @@ export function setupCronJobs(sock) {
   }, config.liveUpdateInterval);
 
   console.log("Live update interval set for every 2 minutes");
+
+  setInterval(async () => {
+    await sendLoopMessages(sock);
+  }, 30 * 1000);
+
+  console.log("Loop message checker set for every 30 seconds");
 }
 
 async function sendDailyReport(sock) {
@@ -79,5 +85,23 @@ async function updateLiveMessages(sock) {
     }
   } catch (error) {
     console.error("Error updating live messages:", error);
+  }
+}
+
+async function sendLoopMessages(sock) {
+  try {
+    const dueMessages = await getDueLoopMessages();
+    
+    for (const loopMsg of dueMessages) {
+      try {
+        await sock.sendMessage(loopMsg.chatId, { text: loopMsg.message });
+        await updateLoopMessageNextSend(loopMsg.id, loopMsg.intervalMs);
+        console.log(`Loop message sent to ${loopMsg.chatId}`);
+      } catch (sendError) {
+        console.error(`Error sending loop message to ${loopMsg.chatId}:`, sendError);
+      }
+    }
+  } catch (error) {
+    console.error("Error processing loop messages:", error);
   }
 }

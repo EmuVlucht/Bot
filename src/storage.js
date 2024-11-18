@@ -1,6 +1,6 @@
 import { db } from "./db.js";
-import { groups, checkpointData, liveMessages } from "../shared/schema.js";
-import { eq, and } from "drizzle-orm";
+import { groups, checkpointData, liveMessages, loopMessages } from "../shared/schema.js";
+import { eq, and, lte } from "drizzle-orm";
 
 export async function initGroup(groupId, groupName) {
   const existingGroup = await db
@@ -218,4 +218,62 @@ export async function getAllActiveLiveMessages() {
     .where(eq(liveMessages.isActive, true));
 
   return msgs;
+}
+
+export async function createLoopMessage(chatId, message, intervalMs) {
+  await db.delete(loopMessages).where(eq(loopMessages.chatId, chatId));
+  
+  const now = new Date();
+  const nextSend = new Date(now.getTime() + intervalMs);
+  
+  await db.insert(loopMessages).values({
+    chatId,
+    message,
+    intervalMs,
+    lastSent: now,
+    nextSend,
+    isActive: true,
+  });
+  
+  return true;
+}
+
+export async function stopLoopMessage(chatId) {
+  await db
+    .update(loopMessages)
+    .set({ isActive: false })
+    .where(eq(loopMessages.chatId, chatId));
+  
+  return true;
+}
+
+export async function getLoopMessage(chatId) {
+  const result = await db
+    .select()
+    .from(loopMessages)
+    .where(and(eq(loopMessages.chatId, chatId), eq(loopMessages.isActive, true)));
+  
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function getDueLoopMessages() {
+  const now = new Date();
+  const msgs = await db
+    .select()
+    .from(loopMessages)
+    .where(and(eq(loopMessages.isActive, true), lte(loopMessages.nextSend, now)));
+  
+  return msgs;
+}
+
+export async function updateLoopMessageNextSend(id, intervalMs) {
+  const now = new Date();
+  const nextSend = new Date(now.getTime() + intervalMs);
+  
+  await db
+    .update(loopMessages)
+    .set({ lastSent: now, nextSend })
+    .where(eq(loopMessages.id, id));
+  
+  return true;
 }

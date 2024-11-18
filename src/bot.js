@@ -10,12 +10,17 @@ import {
   saveLiveMessage,
   getLiveMessage,
   stopLiveMessage,
+  createLoopMessage,
+  stopLoopMessage,
+  getLoopMessage,
 } from "./storage.js";
 import {
   formatCheckpointData,
   parseInitData,
   containsLink,
   isOwner,
+  parseLoopCommand,
+  formatInterval,
 } from "./utils.js";
 
 export function setupMessageHandler(sock) {
@@ -45,25 +50,56 @@ async function handleMessage(sock, msg) {
     if (!msg.message) return;
     if (msg.key.fromMe) return;
 
-    const groupId = msg.key.remoteJid;
+    const chatId = msg.key.remoteJid;
     const sender = msg.key.participant || msg.key.remoteJid;
-    const isGroup = groupId.endsWith("@g.us");
-
-    if (!isGroup) return;
+    const isGroup = chatId.endsWith("@g.us");
 
     const messageContent = getMessageContent(msg);
     const text = messageContent.text || "";
 
+    if (isOwner(sender, config.ownerNumber)) {
+      const loopCmd = parseLoopCommand(text);
+      if (loopCmd) {
+        await handleLoopCommand(sock, chatId, loopCmd);
+        return;
+      }
+    }
+
+    if (!isGroup) return;
+
     if (text.startsWith(config.prefix)) {
-      await handleCommand(sock, msg, groupId, sender, text);
+      await handleCommand(sock, msg, chatId, sender, text);
     } else {
-      const isInit = await isGroupInitialized(groupId);
+      const isInit = await isGroupInitialized(chatId);
       if (isInit) {
-        await countMessage(groupId, msg, messageContent);
+        await countMessage(chatId, msg, messageContent);
       }
     }
   } catch (error) {
     console.error("Error handling message:", error);
+  }
+}
+
+async function handleLoopCommand(sock, chatId, cmd) {
+  try {
+    if (cmd.type === "stop") {
+      const existing = await getLoopMessage(chatId);
+      if (existing) {
+        await stopLoopMessage(chatId);
+        await sock.sendMessage(chatId, { text: "Loop pesan dihentikan." });
+      } else {
+        await sock.sendMessage(chatId, { text: "Tidak ada loop pesan aktif di sini." });
+      }
+    } else if (cmd.type === "start") {
+      await createLoopMessage(chatId, cmd.message, cmd.intervalMs);
+      const intervalText = formatInterval(cmd.intervalMs);
+      await sock.sendMessage(chatId, { 
+        text: `Loop pesan aktif!\nInterval: ${intervalText}\nPesan: ${cmd.message}` 
+      });
+    }
+  } catch (error) {
+    console.error("Error handling loop command:", error);
+    await sock.sendMessage(chatId, { text: "Gagal memproses perintah loop." });
   }
 }
 

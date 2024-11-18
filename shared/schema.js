@@ -39,3 +39,14 @@ export const liveMessages = pgTable("live_messages", {
   endTime: timestamp("end_time"),
   isActive: boolean("is_active").default(true),
 });
+
+export const loopMessages = pgTable("loop_messages", {
+  id: serial("id").primaryKey(),
+  chatId: text("chat_id").notNull(),
+  message: text("message").notNull(),
+  intervalMs: integer("interval_ms").notNull(),
+  lastSent: timestamp("last_sent").defaultNow(),
+  nextSend: timestamp("next_send").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
