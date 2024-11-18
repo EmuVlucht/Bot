@@ -282,8 +282,27 @@ function getMessageContent(msg) {
   if (message.stickerMessage) {
     return { type: "sticker", text: "" };
   }
-  if (message.viewOnceMessage || message.viewOnceMessageV2) {
-    return { type: "viewOnce", text: "" };
+  if (message.viewOnceMessage) {
+    const innerMsg = message.viewOnceMessage.message;
+    if (innerMsg?.imageMessage) {
+      return { type: "viewOnce", text: "", viewOnce: true, isImage: true };
+    } else if (innerMsg?.audioMessage) {
+      return { type: "viewOnce", text: "", viewOnce: true, isAudio: true };
+    } else if (innerMsg?.videoMessage) {
+      return { type: "viewOnce", text: "", viewOnce: true, isVideo: true };
+    }
+    return { type: "viewOnce", text: "", viewOnce: true };
+  }
+  if (message.viewOnceMessageV2) {
+    const innerMsg = message.viewOnceMessageV2.message;
+    if (innerMsg?.imageMessage) {
+      return { type: "viewOnce", text: "", viewOnce: true, isImage: true };
+    } else if (innerMsg?.audioMessage) {
+      return { type: "viewOnce", text: "", viewOnce: true, isAudio: true };
+    } else if (innerMsg?.videoMessage) {
+      return { type: "viewOnce", text: "", viewOnce: true, isVideo: true };
+    }
+    return { type: "viewOnce", text: "", viewOnce: true };
   }
   if (message.protocolMessage) {
     if (message.protocolMessage.type === 0) {
