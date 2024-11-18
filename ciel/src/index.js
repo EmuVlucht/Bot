@@ -11,14 +11,14 @@ const qrcode = require('qrcode-terminal');
 const { parsePhoneNumber } = require('awesome-phonenumber');
 
 const {
-    default: makeWASocket,
+    default: WAConnection,
     useMultiFileAuthState,
     Browsers,
     DisconnectReason,
     makeCacheableSignalKeyStore,
     fetchLatestBaileysVersion,
     jidNormalizedUser
-} = require('@whiskeysockets/baileys');
+} = require('baileys');
 
 const settings = require('../config/settings');
 const { logger } = require('./utils/logger');
@@ -73,7 +73,7 @@ async function startCielBot() {
         return { conversation: 'Halo, saya Ciel Bot!' };
     };
     
-    const conn = makeWASocket({
+    const conn = WAConnection({
         version,
         logger: pinoLogger,
         getMessage,
