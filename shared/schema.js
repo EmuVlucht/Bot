@@ -45,6 +45,7 @@ export const loopMessages = pgTable("loop_messages", {
   chatId: text("chat_id").notNull(),
   message: text("message").notNull(),
   intervalMs: integer("interval_ms").notNull(),
+  remainingCount: integer("remaining_count").notNull().default(1),
   lastSent: timestamp("last_sent").defaultNow(),
   nextSend: timestamp("next_send").notNull(),
   isActive: boolean("is_active").default(true),

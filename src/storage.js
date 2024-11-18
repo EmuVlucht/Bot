@@ -220,7 +220,7 @@ export async function getAllActiveLiveMessages() {
   return msgs;
 }
 
-export async function createLoopMessage(chatId, message, intervalMs) {
+export async function createLoopMessage(chatId, message, intervalMs, count = 1) {
   await db.delete(loopMessages).where(eq(loopMessages.chatId, chatId));
   
   const now = new Date();
@@ -230,6 +230,7 @@ export async function createLoopMessage(chatId, message, intervalMs) {
     chatId,
     message,
     intervalMs,
+    remainingCount: count,
     lastSent: now,
     nextSend,
     isActive: true,
@@ -266,16 +267,25 @@ export async function getDueLoopMessages() {
   return msgs;
 }
 
-export async function updateLoopMessageNextSend(id, intervalMs) {
+export async function updateLoopMessageAfterSend(id, intervalMs, currentRemaining) {
   const now = new Date();
   const nextSend = new Date(now.getTime() + intervalMs);
+  const newRemaining = currentRemaining - 1;
+  
+  if (newRemaining <= 0) {
+    await db
+      .update(loopMessages)
+      .set({ isActive: false, lastSent: now })
+      .where(eq(loopMessages.id, id));
+    return { completed: true };
+  }
   
   await db
     .update(loopMessages)
-    .set({ lastSent: now, nextSend })
+    .set({ lastSent: now, nextSend, remainingCount: newRemaining })
     .where(eq(loopMessages.id, id));
   
-  return true;
+  return { completed: false, remaining: newRemaining };
 }
 
 export async function trackMessage(groupId, messageId, messageType) {

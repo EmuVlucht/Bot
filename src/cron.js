@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import { config, formatOwnerJid } from "./config.js";
-import { getAllGroupsData, getAllActiveLiveMessages, getGroupData, stopLiveMessage, getDueLoopMessages, updateLoopMessageNextSend } from "./storage.js";
+import { getAllGroupsData, getAllActiveLiveMessages, getGroupData, stopLiveMessage, getDueLoopMessages, updateLoopMessageAfterSend } from "./storage.js";
 import { formatAllGroupsData, formatCheckpointData } from "./utils.js";
 
 export function setupCronJobs(sock) {
@@ -99,8 +99,13 @@ async function sendLoopMessages(sock) {
     for (const loopMsg of dueMessages) {
       try {
         await sock.sendMessage(loopMsg.chatId, { text: loopMsg.message });
-        await updateLoopMessageNextSend(loopMsg.id, loopMsg.intervalMs);
-        console.log(`Loop message sent to ${loopMsg.chatId}`);
+        const result = await updateLoopMessageAfterSend(loopMsg.id, loopMsg.intervalMs, loopMsg.remainingCount);
+        
+        if (result.completed) {
+          console.log(`[LOOP] Completed for ${loopMsg.chatId} (sent all messages)`);
+        } else {
+          console.log(`[LOOP] Sent to ${loopMsg.chatId}, remaining: ${result.remaining}`);
+        }
       } catch (sendError) {
         console.error(`Error sending loop message to ${loopMsg.chatId}:`, sendError);
       }

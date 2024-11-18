@@ -119,10 +119,10 @@ async function handleLoopCommand(sock, chatId, cmd) {
         await sock.sendMessage(chatId, { text: "Tidak ada loop pesan aktif di sini." });
       }
     } else if (cmd.type === "start") {
-      await createLoopMessage(chatId, cmd.message, cmd.intervalMs);
+      await createLoopMessage(chatId, cmd.message, cmd.intervalMs, cmd.count);
       const intervalText = formatInterval(cmd.intervalMs);
       await sock.sendMessage(chatId, { 
-        text: `Loop pesan aktif!\nInterval: ${intervalText}\nPesan: ${cmd.message}` 
+        text: `Loop pesan aktif!\nInterval: ${intervalText}\nJumlah: ${cmd.count}x\nPesan: ${cmd.message}` 
       });
     }
   } catch (error) {

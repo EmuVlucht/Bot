@@ -135,14 +135,26 @@ export function parseLoopCommand(text) {
     return { type: "stop" };
   }
   
-  const loopMatch = text.match(/^([îÎìÏiI]+)\s*;\s*(.+)$/s);
-  if (loopMatch) {
-    const timeStr = loopMatch[1];
-    const message = loopMatch[2].trim();
+  const loopWithCountMatch = text.match(/^([îÎ]+)\s*;\s*(\d+)\s*;\s*(.+)$/s);
+  if (loopWithCountMatch) {
+    const timeStr = loopWithCountMatch[1];
+    const count = parseInt(loopWithCountMatch[2], 10);
+    const message = loopWithCountMatch[3].trim();
+    const intervalMs = parseLoopTime(timeStr);
+    
+    if (intervalMs && message && count > 0) {
+      return { type: "start", intervalMs, message, count };
+    }
+  }
+  
+  const loopSimpleMatch = text.match(/^([îÎ]+)\s*;\s*(.+)$/s);
+  if (loopSimpleMatch) {
+    const timeStr = loopSimpleMatch[1];
+    const message = loopSimpleMatch[2].trim();
     const intervalMs = parseLoopTime(timeStr);
     
     if (intervalMs && message) {
-      return { type: "start", intervalMs, message };
+      return { type: "start", intervalMs, message, count: 1 };
     }
   }
   
