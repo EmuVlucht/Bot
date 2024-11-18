@@ -96,9 +96,14 @@ export function isOwner(sender, ownerNumber) {
 export function parseLoopTime(timeStr) {
   const trimmed = timeStr.trim();
   
-  const circumflexCount = (trimmed.match(/î/g) || []).length;
-  if (circumflexCount > 0 && trimmed === "î".repeat(circumflexCount)) {
-    return circumflexCount * 1000;
+  const circumflexLowerCount = (trimmed.match(/î/g) || []).length;
+  if (circumflexLowerCount > 0 && trimmed === "î".repeat(circumflexLowerCount)) {
+    return circumflexLowerCount * 1000;
+  }
+  
+  const circumflexUpperCount = (trimmed.match(/Î/g) || []).length;
+  if (circumflexUpperCount > 0 && trimmed === "Î".repeat(circumflexUpperCount)) {
+    return circumflexUpperCount * 1000;
   }
   
   const smallICount = (trimmed.match(/ì/g) || []).length;
@@ -130,7 +135,7 @@ export function parseLoopCommand(text) {
     return { type: "stop" };
   }
   
-  const loopMatch = text.match(/^([îìÏiI]+)\s*;\s*(.+)$/s);
+  const loopMatch = text.match(/^([îÎìÏiI]+)\s*;\s*(.+)$/s);
   if (loopMatch) {
     const timeStr = loopMatch[1];
     const message = loopMatch[2].trim();
