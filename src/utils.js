@@ -98,48 +98,31 @@ export function isOwner(sender, ownerNumber) {
 }
 
 export function parseLoopTime(timeStr) {
-  const trimmed = timeStr.trim();
+  const trimmed = timeStr.trim().toLowerCase();
   
-  const circumflexLowerCount = (trimmed.match(/î/g) || []).length;
-  if (circumflexLowerCount > 0 && trimmed === "î".repeat(circumflexLowerCount)) {
-    return circumflexLowerCount * 1000;
-  }
+  const timeMap = {
+    "1s": 1000,
+    "2s": 2000,
+    "1m": 60 * 1000,
+    "10m": 10 * 60 * 1000,
+    "30m": 30 * 60 * 1000,
+    "1h": 60 * 60 * 1000,
+  };
   
-  const circumflexUpperCount = (trimmed.match(/Î/g) || []).length;
-  if (circumflexUpperCount > 0 && trimmed === "Î".repeat(circumflexUpperCount)) {
-    return circumflexUpperCount * 2000;
-  }
-  
-  const smallICount = (trimmed.match(/ì/g) || []).length;
-  if (smallICount > 0 && trimmed === "ì".repeat(smallICount)) {
-    return smallICount * 60 * 1000;
-  }
-  
-  const bigIUmlautCount = (trimmed.match(/Ï/g) || []).length;
-  if (bigIUmlautCount > 0 && trimmed === "Ï".repeat(bigIUmlautCount)) {
-    return bigIUmlautCount * 10 * 60 * 1000;
-  }
-  
-  const smallILatinCount = (trimmed.match(/i/g) || []).length;
-  if (smallILatinCount > 0 && trimmed === "i".repeat(smallILatinCount)) {
-    return smallILatinCount * 30 * 60 * 1000;
-  }
-  
-  const bigICount = (trimmed.match(/I/g) || []).length;
-  if (bigICount > 0 && trimmed === "I".repeat(bigICount)) {
-    return bigICount * 60 * 60 * 1000;
+  if (timeMap[trimmed]) {
+    return timeMap[trimmed];
   }
   
   return null;
 }
 
 export function parseLoopCommand(text) {
-  const stopMatch = text.match(/^∅\s*[:;]\s*0$/);
+  const stopMatch = text.match(/^stop\s*;\s*0$/i);
   if (stopMatch) {
     return { type: "stop" };
   }
   
-  const loopWithCountMatch = text.match(/^([îÎìÏiI]+)\s*;\s*(\d+)\s*;\s*(.+)$/s);
+  const loopWithCountMatch = text.match(/^(1s|2s|1m|10m|30m|1h)\s*;\s*(\d+)\s*;\s*(.+)$/is);
   if (loopWithCountMatch) {
     const timeStr = loopWithCountMatch[1];
     const count = parseInt(loopWithCountMatch[2], 10);
@@ -151,7 +134,7 @@ export function parseLoopCommand(text) {
     }
   }
   
-  const loopSimpleMatch = text.match(/^([îÎìÏiI]+)\s*;\s*(.+)$/s);
+  const loopSimpleMatch = text.match(/^(1s|2s|1m|10m|30m|1h)\s*;\s*(.+)$/is);
   if (loopSimpleMatch) {
     const timeStr = loopSimpleMatch[1];
     const message = loopSimpleMatch[2].trim();

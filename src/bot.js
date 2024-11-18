@@ -174,7 +174,7 @@ async function handleLoopCommand(sock, chatId, cmd) {
       
       if (cmd.unlimited) {
         await sock.sendMessage(chatId, { 
-          text: `Loop pesan aktif!\nInterval: ${intervalText}\nJumlah: Tak terbatas\nPesan: ${cmd.message}\n\nHentikan dengan: ∅ : 0` 
+          text: `Loop pesan aktif!\nInterval: ${intervalText}\nJumlah: Tak terbatas\nPesan: ${cmd.message}\n\nHentikan dengan: stop ; 0` 
         });
       } else {
         await sock.sendMessage(chatId, { 
