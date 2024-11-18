@@ -1,0 +1,225 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  jid         String   @unique
+  name        String?
+  vip         Boolean  @default(false)
+  banned      Boolean  @default(false)
+  premium     Boolean  @default(false)
+  premiumExpiry DateTime?
+  limit       Int      @default(20)
+  money       Int      @default(10000)
+  lastClaim   DateTime @default(now())
+  lastBegal   DateTime @default(now())
+  lastRampok  DateTime @default(now())
+  registered  Boolean  @default(false)
+  afkTime     DateTime?
+  afkReason   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  ownedBots   JadiBot[]
+  gameStats   GameStats?
+}
+
+model Group {
+  id              String   @id @default(uuid())
+  jid             String   @unique
+  name            String?
+  mute            Boolean  @default(false)
+  nsfw            Boolean  @default(false)
+  welcome         Boolean  @default(false)
+  leave           Boolean  @default(false)
+  promote         Boolean  @default(false)
+  demote          Boolean  @default(false)
+  antilink        Boolean  @default(false)
+  antitoxic       Boolean  @default(false)
+  antivirtex      Boolean  @default(false)
+  antidelete      Boolean  @default(false)
+  antihidetag     Boolean  @default(false)
+  antitagsw       Boolean  @default(false)
+  antispam        Boolean  @default(false)
+  setinfo         Boolean  @default(false)
+  waktusholat     Boolean  @default(false)
+  welcomeText     String?
+  leaveText       String?
+  promoteText     String?
+  demoteText      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  warns           GroupWarn[]
+  tagswCount      TagSwCount[]
+}
+
+model GroupWarn {
+  id        String   @id @default(uuid())
+  groupId   String
+  userJid   String
+  count     Int      @default(1)
+  reason    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  
+  @@unique([groupId, userJid])
+}
+
+model TagSwCount {
+  id        String   @id @default(uuid())
+  groupId   String
+  userJid   String
+  count     Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  
+  @@unique([groupId, userJid])
+}
+
+model Sewa {
+  id        String   @id @default(uuid())
+  groupJid  String   @unique
+  groupUrl  String?
+  expiredAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Premium {
+  id        String   @id @default(uuid())
+  userJid   String   @unique
+  expiredAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BotSettings {
+  id            String   @id @default(uuid())
+  botJid        String   @unique
+  owner         String[]
+  botName       String   @default("Ciel Bot")
+  author        String   @default("Ciel")
+  packname      String   @default("Ciel Stickers")
+  lang          String   @default("id")
+  public        Boolean  @default(true)
+  antiCall      Boolean  @default(true)
+  autoRead      Boolean  @default(true)
+  autoTyping    Boolean  @default(true)
+  antiSpam      Boolean  @default(true)
+  autoBio       Boolean  @default(false)
+  readSw        Boolean  @default(false)
+  autoBackup    Boolean  @default(false)
+  groupOnly     Boolean  @default(false)
+  privateOnly   Boolean  @default(false)
+  multiPrefix   Boolean  @default(true)
+  joined        Boolean  @default(false)
+  template      String   @default("documentMessage")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Hit {
+  id        String   @id @default(uuid())
+  command   String   @unique
+  count     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TotalHit {
+  id        String   @id @default("total")
+  totalCmd  Int      @default(0)
+  todayCmd  Int      @default(0)
+  lastReset DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model JadiBot {
+  id        String   @id @default(uuid())
+  botJid    String   @unique
+  ownerJid  String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  owner     User     @relation(fields: [ownerJid], references: [jid], onDelete: Cascade)
+}
+
+model GameStats {
+  id          String   @id @default(uuid())
+  userJid     String   @unique
+  wins        Int      @default(0)
+  losses      Int      @default(0)
+  draws       Int      @default(0)
+  winStreak   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user        User     @relation(fields: [userJid], references: [jid], onDelete: Cascade)
+}
+
+model ActiveGame {
+  id          String   @id @default(uuid())
+  chatJid     String
+  gameType    String
+  gameData    Json
+  players     String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  expiresAt   DateTime
+  
+  @@unique([chatJid, gameType])
+}
+
+model Menfes {
+  id          String   @id @default(uuid())
+  senderJid   String
+  targetJid   String
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([senderJid, targetJid])
+}
+
+model ChatAi {
+  id          String   @id @default(uuid())
+  chatJid     String   @unique
+  history     Json     @default("[]")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CustomCommand {
+  id        String   @id @default(uuid())
+  botJid    String
+  trigger   String
+  response  String
+  type      String   @default("text")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([botJid, trigger])
+}
+
+model MediaCache {
+  id        String   @id @default(uuid())
+  hash      String   @unique
+  type      String
+  data      Bytes
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+}
