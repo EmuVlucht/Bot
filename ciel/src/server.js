@@ -10,14 +10,18 @@ const server = createServer(app);
 app.use(express.json());
 
 let botInstance = null;
+let serverStarted = false;
 const startTime = Date.now();
 
 const startServer = (conn) => {
     botInstance = conn;
     
+    if (serverStarted) return;
+    
     const PORT = settings.server.port;
     
     server.listen(PORT, '0.0.0.0', () => {
+        serverStarted = true;
         console.log(`🌐 Server berjalan di port ${PORT}`);
     });
 };

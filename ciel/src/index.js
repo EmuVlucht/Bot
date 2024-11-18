@@ -137,6 +137,8 @@ async function startCielBot() {
     
     setupExtensions(conn, global.store);
     
+    startServer(conn);
+    
     conn.ev.on('creds.update', saveCreds);
     
     conn.ev.on('connection.update', async (update) => {
@@ -166,15 +168,20 @@ async function startCielBot() {
                 logger.warn(`Koneksi terputus (${DisconnectReason[reason] || reason}). Menghubungkan ulang...`);
                 startCielBot();
             } else if (reason === DisconnectReason.loggedOut || reason === DisconnectReason.forbidden) {
-                logger.error('Session tidak valid. Hapus folder session dan scan ulang.');
-                await fs.remove(sessionFolder);
-                process.exit(1);
+                if (!conn.authState.creds.registered && pairingStarted) {
+                    logger.warn('Menunggu pairing code dimasukkan. Menghubungkan ulang dalam 5 detik...');
+                    setTimeout(() => startCielBot(), 5000);
+                } else {
+                    logger.error('Session tidak valid. Hapus folder session dan scan ulang.');
+                    await fs.remove(sessionFolder);
+                    process.exit(1);
+                }
             } else if (reason === DisconnectReason.connectionReplaced) {
                 logger.error('Koneksi digantikan oleh session lain.');
                 process.exit(0);
             } else {
-                logger.error(`Disconnect tidak dikenal: ${reason}`);
-                conn.end(`Unknown DisconnectReason: ${reason}`);
+                logger.warn(`Disconnect (${reason}). Menghubungkan ulang...`);
+                startCielBot();
             }
         }
         
@@ -194,8 +201,6 @@ async function startCielBot() {
                     logger.warn('Gagal memuat group metadata');
                 }
             }
-            
-            startServer(conn);
         }
         
         if (isNewLogin) {
