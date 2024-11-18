@@ -172,6 +172,10 @@ function getMessageContent(msg) {
 }
 
 async function countMessage(groupId, msg, content) {
+  if (content.type === "deleted") {
+    return;
+  }
+
   if (content.viewOnce || content.type === "viewOnce") {
     await incrementCounter(groupId, "oneTime");
     return;
@@ -179,11 +183,6 @@ async function countMessage(groupId, msg, content) {
 
   if (containsLink(content.text)) {
     await incrementCounter(groupId, "link");
-    return;
-  }
-
-  if (content.type === "deleted") {
-    await incrementCounter(groupId, "nullMsg");
     return;
   }
 
