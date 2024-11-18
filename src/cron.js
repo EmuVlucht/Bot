@@ -103,6 +103,8 @@ async function sendLoopMessages(sock) {
         
         if (result.completed) {
           console.log(`[LOOP] Completed for ${loopMsg.chatId} (sent all messages)`);
+        } else if (result.unlimited) {
+          console.log(`[LOOP] Sent to ${loopMsg.chatId} (unlimited)`);
         } else {
           console.log(`[LOOP] Sent to ${loopMsg.chatId}, remaining: ${result.remaining}`);
         }

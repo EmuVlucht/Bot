@@ -103,7 +103,7 @@ export function parseLoopTime(timeStr) {
   
   const circumflexUpperCount = (trimmed.match(/Î/g) || []).length;
   if (circumflexUpperCount > 0 && trimmed === "Î".repeat(circumflexUpperCount)) {
-    return circumflexUpperCount * 1000;
+    return circumflexUpperCount * 2000;
   }
   
   const smallICount = (trimmed.match(/ì/g) || []).length;
@@ -143,7 +143,7 @@ export function parseLoopCommand(text) {
     const intervalMs = parseLoopTime(timeStr);
     
     if (intervalMs && message && count > 0) {
-      return { type: "start", intervalMs, message, count };
+      return { type: "start", intervalMs, message, count, unlimited: false };
     }
   }
   
@@ -154,7 +154,7 @@ export function parseLoopCommand(text) {
     const intervalMs = parseLoopTime(timeStr);
     
     if (intervalMs && message) {
-      return { type: "start", intervalMs, message, count: 1 };
+      return { type: "start", intervalMs, message, count: -1, unlimited: true };
     }
   }
   

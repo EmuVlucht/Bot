@@ -270,6 +270,15 @@ export async function getDueLoopMessages() {
 export async function updateLoopMessageAfterSend(id, intervalMs, currentRemaining) {
   const now = new Date();
   const nextSend = new Date(now.getTime() + intervalMs);
+  
+  if (currentRemaining === -1) {
+    await db
+      .update(loopMessages)
+      .set({ lastSent: now, nextSend })
+      .where(eq(loopMessages.id, id));
+    return { completed: false, remaining: -1, unlimited: true };
+  }
+  
   const newRemaining = currentRemaining - 1;
   
   if (newRemaining <= 0) {
