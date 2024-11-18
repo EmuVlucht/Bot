@@ -178,7 +178,7 @@ async function connectToWhatsApp() {
       browser: Browsers.ubuntu("Chrome"),
       generateHighQualityLinkPreview: true,
       syncFullHistory: false,
-      markOnlineOnConnect: true,
+      markOnlineOnConnect: false,
       connectTimeoutMs: 60000,
       qrTimeout: 60000,
       defaultQueryTimeoutMs: 60000,
@@ -328,14 +328,18 @@ async function connectToWhatsApp() {
         console.log(`Daily Report: 00:00 ${config.timezone}`);
         console.log("====================================\n");
 
-        console.log("[INIT] Menunggu koneksi stabil (3 detik)...");
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        console.log("[INIT] Menunggu koneksi stabil (5 detik)...");
+        await new Promise(resolve => setTimeout(resolve, 5000));
         
         if (sock.user && currentSock === sock) {
           console.log("[INIT] Koneksi stabil, mengaktifkan fitur...");
           
-          initStealthMode(sock);
-          console.log("[INIT] Stealth mode module ready");
+          try {
+            initStealthMode(sock);
+            console.log("[INIT] Stealth mode module ready");
+          } catch (e) {
+            console.log("[INIT] Stealth mode init skipped:", e.message);
+          }
           
           setupMessageHandler(sock);
           setupCronJobs(sock);
