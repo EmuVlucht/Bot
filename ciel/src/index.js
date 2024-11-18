@@ -33,8 +33,6 @@ const msgRetryCounterCache = new NodeCache();
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 const question = (text) => new Promise((resolve) => rl.question(text, resolve));
 
-let pairingStarted = false;
-
 const printSystemInfo = () => {
     logger.banner();
     logger.systemInfo({
@@ -105,9 +103,9 @@ async function startCielBot() {
         groupMetadata: {}
     };
     
+    let phoneNumber = settings.pairing.phoneNumber || process.env.BOT_NUMBER;
+    
     if (settings.pairing.enabled && !conn.authState.creds.registered) {
-        let phoneNumber = settings.pairing.phoneNumber || process.env.BOT_NUMBER;
-        
         if (!phoneNumber) {
             phoneNumber = await question('Masukkan nomor WhatsApp Bot (contoh: 62812xxx): ');
         }
@@ -123,8 +121,7 @@ async function startCielBot() {
         logger.info('Nomor berhasil diverifikasi. Menunggu koneksi...');
         
         setTimeout(async () => {
-            if (!pairingStarted && !conn.authState.creds.registered) {
-                pairingStarted = true;
+            if (!conn.authState.creds.registered) {
                 logger.info('Meminta Pairing Code...');
                 try {
                     const code = await conn.requestPairingCode(phoneNumber);
@@ -170,7 +167,7 @@ async function startCielBot() {
                 logger.warn(`Koneksi terputus (${DisconnectReason[reason] || reason}). Menghubungkan ulang...`);
                 startCielBot();
             } else if (reason === DisconnectReason.loggedOut || reason === DisconnectReason.forbidden) {
-                if (!conn.authState.creds.registered && pairingStarted) {
+                if (!conn.authState.creds.registered) {
                     logger.warn('Menunggu pairing code dimasukkan. Menghubungkan ulang dalam 5 detik...');
                     setTimeout(() => startCielBot(), 5000);
                 } else {
