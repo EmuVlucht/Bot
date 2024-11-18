@@ -186,3 +186,57 @@ export async function forceChangePP(sock, ppType) {
     fileName: ppFileName,
   };
 }
+
+export function getLiburList() {
+  return { ...hariLiburNasional };
+}
+
+export function addLibur(tanggal, keterangan) {
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(tanggal)) {
+    throw new Error("Format tanggal tidak valid. Gunakan format YYYY-MM-DD");
+  }
+  
+  hariLiburNasional[tanggal] = keterangan;
+  saveLiburData();
+  
+  return { tanggal, keterangan };
+}
+
+export function removeLibur(tanggal) {
+  if (!hariLiburNasional[tanggal]) {
+    throw new Error(`Tanggal ${tanggal} tidak ditemukan dalam daftar libur`);
+  }
+  
+  const keterangan = hariLiburNasional[tanggal];
+  delete hariLiburNasional[tanggal];
+  saveLiburData();
+  
+  return { tanggal, keterangan };
+}
+
+function saveLiburData() {
+  const liburPath = path.join(rootDir, "libur.json");
+  fs.writeFileSync(liburPath, JSON.stringify(hariLiburNasional, null, 2));
+}
+
+export async function replacePPImage(ppType, imageBuffer) {
+  if (!["A", "B", "C"].includes(ppType)) {
+    throw new Error("Tipe PP tidak valid. Gunakan A, B, atau C");
+  }
+  
+  const ppFileName = getPPFileName(ppType);
+  const ppPath = path.join(rootDir, ppFileName);
+  
+  fs.writeFileSync(ppPath, imageBuffer);
+  
+  if (currentPP === ppType) {
+    currentPP = null;
+  }
+  
+  return {
+    type: ppType,
+    name: getPPName(ppType),
+    fileName: ppFileName,
+  };
+}

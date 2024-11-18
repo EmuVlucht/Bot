@@ -28,7 +28,8 @@ import {
 } from "./utils.js";
 import { findAutoReply } from "./autoReply.js";
 import { getTemplate, getAvailableTemplates } from "./kirimTemplates.js";
-import { getCurrentPPStatus, forceChangePP } from "./profilePicture.js";
+import { getCurrentPPStatus, forceChangePP, getLiburList, addLibur, removeLibur, replacePPImage } from "./profilePicture.js";
+import { downloadMediaMessage } from "@whiskeysockets/baileys";
 
 export function setupMessageHandler(sock) {
   sock.ev.on("messages.upsert", async ({ messages, type }) => {
@@ -87,7 +88,17 @@ async function handleMessage(sock, msg) {
       }
       
       if (text.startsWith(".pp")) {
-        await handlePP(sock, chatId, text);
+        await handlePP(sock, msg, chatId, text);
+        return;
+      }
+      
+      if (text.startsWith(".libur")) {
+        await handleLibur(sock, chatId, text);
+        return;
+      }
+      
+      if (text.startsWith(".gantipp")) {
+        await handleGantiPP(sock, msg, chatId, text);
         return;
       }
       
@@ -111,7 +122,17 @@ async function handleMessage(sock, msg) {
       }
       
       if (text.startsWith(".pp")) {
-        await handlePP(sock, chatId, text);
+        await handlePP(sock, msg, chatId, text);
+        return;
+      }
+      
+      if (text.startsWith(".libur")) {
+        await handleLibur(sock, chatId, text);
+        return;
+      }
+      
+      if (text.startsWith(".gantipp")) {
+        await handleGantiPP(sock, msg, chatId, text);
         return;
       }
     }
@@ -516,7 +537,7 @@ async function handleKirim(sock, chatId, text) {
   }
 }
 
-async function handlePP(sock, chatId, text) {
+async function handlePP(sock, msg, chatId, text) {
   try {
     const args = text.replace(".pp", "").trim().toLowerCase();
     
@@ -560,5 +581,142 @@ async function handlePP(sock, chatId, text) {
   } catch (error) {
     console.error("Error handling PP command:", error);
     await sock.sendMessage(chatId, { text: `Gagal mengganti PP: ${error.message}` });
+  }
+}
+
+async function handleLibur(sock, chatId, text) {
+  try {
+    const args = text.replace(".libur", "").trim();
+    const parts = args.split(/\s+/);
+    const action = parts[0]?.toLowerCase();
+    
+    if (!action || action === "list") {
+      const liburList = getLiburList();
+      const entries = Object.entries(liburList).sort((a, b) => a[0].localeCompare(b[0]));
+      
+      if (entries.length === 0) {
+        await sock.sendMessage(chatId, { text: "Tidak ada hari libur yang terdaftar." });
+        return;
+      }
+      
+      let listText = "📅 *Daftar Hari Libur Nasional*\n\n";
+      for (const [tanggal, keterangan] of entries) {
+        listText += `• ${tanggal}: ${keterangan}\n`;
+      }
+      
+      listText += "\n*Perintah:*\n";
+      listText += ".libur list - Lihat daftar\n";
+      listText += ".libur tambah YYYY-MM-DD Keterangan\n";
+      listText += ".libur hapus YYYY-MM-DD";
+      
+      await sock.sendMessage(chatId, { text: listText });
+      return;
+    }
+    
+    if (action === "tambah" || action === "add") {
+      const tanggal = parts[1];
+      const keterangan = parts.slice(2).join(" ");
+      
+      if (!tanggal || !keterangan) {
+        await sock.sendMessage(chatId, {
+          text: "Format: .libur tambah YYYY-MM-DD Keterangan\n\nContoh:\n.libur tambah 2025-12-31 Malam Tahun Baru",
+        });
+        return;
+      }
+      
+      const result = addLibur(tanggal, keterangan);
+      await sock.sendMessage(chatId, {
+        text: `✅ Hari libur berhasil ditambahkan!\n\nTanggal: ${result.tanggal}\nKeterangan: ${result.keterangan}`,
+      });
+      return;
+    }
+    
+    if (action === "hapus" || action === "delete" || action === "remove") {
+      const tanggal = parts[1];
+      
+      if (!tanggal) {
+        await sock.sendMessage(chatId, {
+          text: "Format: .libur hapus YYYY-MM-DD\n\nContoh:\n.libur hapus 2025-12-31",
+        });
+        return;
+      }
+      
+      const result = removeLibur(tanggal);
+      await sock.sendMessage(chatId, {
+        text: `✅ Hari libur berhasil dihapus!\n\nTanggal: ${result.tanggal}\nKeterangan: ${result.keterangan}`,
+      });
+      return;
+    }
+    
+    await sock.sendMessage(chatId, {
+      text: "Perintah tidak dikenal.\n\nGunakan:\n.libur list - Lihat daftar\n.libur tambah YYYY-MM-DD Keterangan\n.libur hapus YYYY-MM-DD",
+    });
+    
+  } catch (error) {
+    console.error("Error handling libur command:", error);
+    await sock.sendMessage(chatId, { text: `Gagal: ${error.message}` });
+  }
+}
+
+async function handleGantiPP(sock, msg, chatId, text) {
+  try {
+    const args = text.replace(".gantipp", "").trim().toLowerCase();
+    
+    let ppType;
+    switch (args) {
+      case "malam":
+      case "a":
+        ppType = "A";
+        break;
+      case "siang":
+      case "b":
+        ppType = "B";
+        break;
+      case "khusus":
+      case "c":
+        ppType = "C";
+        break;
+      default:
+        await sock.sendMessage(chatId, {
+          text: "Cara pakai: Kirim gambar dengan caption\n\n.gantipp malam - Ganti gambar PP Malam\n.gantipp siang - Ganti gambar PP Siang\n.gantipp khusus - Ganti gambar PP Khusus",
+        });
+        return;
+    }
+    
+    const message = msg.message;
+    const hasImage = message?.imageMessage || message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage;
+    
+    if (!hasImage) {
+      await sock.sendMessage(chatId, {
+        text: "Kirim gambar baru dengan caption .gantipp malam/siang/khusus\n\nAtau reply gambar dengan caption yang sama.",
+      });
+      return;
+    }
+    
+    await sock.sendMessage(chatId, { text: "Mengunduh gambar..." });
+    
+    let imageMessage;
+    if (message?.imageMessage) {
+      imageMessage = msg;
+    } else {
+      const quotedMsg = message?.extendedTextMessage?.contextInfo?.quotedMessage;
+      imageMessage = {
+        message: quotedMsg,
+      };
+    }
+    
+    const buffer = await downloadMediaMessage(imageMessage, "buffer", {});
+    
+    await sock.sendMessage(chatId, { text: "Menyimpan gambar..." });
+    
+    const result = await replacePPImage(ppType, buffer);
+    
+    await sock.sendMessage(chatId, {
+      text: `✅ Gambar PP berhasil diganti!\n\nTipe: ${result.name}\nFile: ${result.fileName}\n\nGunakan .pp ${args} untuk menerapkan sekarang.`,
+    });
+    
+  } catch (error) {
+    console.error("Error handling gantipp command:", error);
+    await sock.sendMessage(chatId, { text: `Gagal mengganti gambar PP: ${error.message}` });
   }
 }
