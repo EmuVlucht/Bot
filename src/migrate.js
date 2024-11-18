@@ -58,10 +58,18 @@ async function runMigrations() {
         link INTEGER DEFAULT 0,
         media INTEGER DEFAULT 0,
         null_msg INTEGER DEFAULT 0,
+        dll INTEGER DEFAULT 0,
         updated_at TIMESTAMP DEFAULT NOW()
       )
     `);
     console.log("[MIGRATE] Table checkpoint_data ready");
+    
+    try {
+      await pool.query(`ALTER TABLE checkpoint_data ADD COLUMN IF NOT EXISTS dll INTEGER DEFAULT 0`);
+      console.log("[MIGRATE] Column dll added to checkpoint_data");
+    } catch (e) {
+      console.log("[MIGRATE] Column dll already exists or error:", e.message);
+    }
     
     await pool.query(`
       CREATE TABLE IF NOT EXISTS live_messages (

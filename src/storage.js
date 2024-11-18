@@ -147,6 +147,9 @@ export async function incrementCounter(groupId, type) {
     case "nullMsg":
       updateObj.nullMsg = data.nullMsg + 1;
       break;
+    case "dll":
+      updateObj.dll = data.dll + 1;
+      break;
     default:
       return false;
   }
@@ -175,6 +178,7 @@ export async function rebaseData(groupId, data) {
       link: currentData.link + (data.link || 0),
       media: currentData.media + (data.media || 0),
       nullMsg: currentData.nullMsg + (data.nullMsg || 0),
+      dll: currentData.dll + (data.dll || 0),
       updatedAt: new Date(),
     })
     .where(eq(checkpointData.groupId, groupId));
