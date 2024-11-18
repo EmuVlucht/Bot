@@ -4,6 +4,7 @@ import makeWASocket, {
   fetchLatestBaileysVersion,
   makeCacheableSignalKeyStore,
   initAuthCreds,
+  Browsers,
 } from "@whiskeysockets/baileys";
 import pino from "pino";
 import qrcode from "qrcode-terminal";
@@ -12,15 +13,33 @@ import { setupCronJobs } from "./cron.js";
 import { config } from "./config.js";
 import { setupProfilePictureChanger, stopProfilePictureChanger } from "./profilePicture.js";
 import { testConnection } from "./db.js";
-import { initDBAuthState } from "./sessionStore.js";
-import { startWebServer, updateQR, clearQR, setConnected, setDisconnected, setSocketInstance, clearPairingCode, updatePairingCode, setPairingCallback } from "./web.js";
+import { initDBAuthState, clearAllSessions } from "./sessionStore.js";
+import { 
+  startWebServer, 
+  updateQR, 
+  clearQR, 
+  setConnected, 
+  setDisconnected, 
+  setSocketInstance, 
+  clearPairingCode, 
+  updatePairingCode,
+  setConnectionState,
+  broadcastStatus,
+  setPairingCallback,
+  setLogoutCallback
+} from "./web.js";
 
 const logger = pino({ level: "silent" });
 const isRailway = process.env.RAILWAY_ENVIRONMENT !== undefined;
 const useDBSession = isRailway || process.env.USE_DB_SESSION === "true";
 
 let currentSock = null;
-let pairingRequested = false;
+let isConnecting = false;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 10;
+const RECONNECT_INTERVAL = 5000;
+
+let pairingMode = null;
 let pendingPairingPhone = null;
 
 startWebServer();
@@ -41,152 +60,279 @@ async function getAuthState() {
   }
 }
 
-async function requestPairingForPhone(phone) {
-  pendingPairingPhone = phone;
-  pairingRequested = true;
+async function requestPairingCode(phoneNumber) {
+  console.log(`[PAIRING] Request received for phone: ${phoneNumber}`);
+  
+  pendingPairingPhone = phoneNumber;
+  pairingMode = "code";
+  
+  setConnectionState("requesting_pairing");
+  broadcastStatus();
   
   if (currentSock) {
     try {
       currentSock.end();
-    } catch (e) {}
+    } catch (e) {
+      console.log("[PAIRING] Socket cleanup:", e.message);
+    }
   }
   
-  setTimeout(() => {
-    connectToWhatsApp();
-  }, 1000);
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  
+  connectToWhatsApp();
 }
 
-setPairingCallback(requestPairingForPhone);
+async function handleLogout() {
+  console.log("[LOGOUT] Logout requested");
+  
+  if (currentSock) {
+    try {
+      await currentSock.logout();
+    } catch (e) {
+      console.log("[LOGOUT] Error during logout:", e.message);
+    }
+  }
+  
+  if (useDBSession) {
+    await clearAllSessions();
+    console.log("[LOGOUT] Database sessions cleared");
+  } else {
+    const fs = await import("fs");
+    try {
+      fs.rmSync("auth_info", { recursive: true, force: true });
+      console.log("[LOGOUT] File sessions cleared");
+    } catch (e) {
+      console.log("[LOGOUT] Error clearing file sessions:", e.message);
+    }
+  }
+  
+  pairingMode = null;
+  pendingPairingPhone = null;
+  reconnectAttempts = 0;
+  
+  setDisconnected();
+  clearQR();
+  clearPairingCode();
+  broadcastStatus();
+  
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  connectToWhatsApp();
+}
+
+setPairingCallback(requestPairingCode);
+setLogoutCallback(handleLogout);
 
 async function connectToWhatsApp() {
-  const connected = await testConnection();
-  if (!connected) {
-    console.error("Failed to connect to database. Retrying in 5 seconds...");
-    setTimeout(connectToWhatsApp, 5000);
+  if (isConnecting) {
+    console.log("[CONNECT] Already connecting, skipping...");
     return;
   }
+  
+  isConnecting = true;
+  setConnectionState("connecting");
+  broadcastStatus();
+  
+  try {
+    const connected = await testConnection();
+    if (!connected) {
+      console.error("[DB] Failed to connect to database. Retrying in 5 seconds...");
+      isConnecting = false;
+      setTimeout(connectToWhatsApp, RECONNECT_INTERVAL);
+      return;
+    }
 
-  const { state, saveCreds } = await getAuthState();
-  const { version } = await fetchLatestBaileysVersion();
+    const { state, saveCreds } = await getAuthState();
+    const { version, isLatest } = await fetchLatestBaileysVersion();
+    
+    console.log(`[WA] Using WA version ${version.join(".")}, isLatest: ${isLatest}`);
 
-  const sock = makeWASocket({
-    version,
-    logger,
-    printQRInTerminal: false,
-    auth: {
-      creds: state.creds,
-      keys: makeCacheableSignalKeyStore(state.keys, logger),
-    },
-    generateHighQualityLinkPreview: true,
-    syncFullHistory: false,
-    markOnlineOnConnect: true,
-  });
+    const sock = makeWASocket({
+      version,
+      logger,
+      printQRInTerminal: false,
+      auth: {
+        creds: state.creds,
+        keys: makeCacheableSignalKeyStore(state.keys, logger),
+      },
+      browser: Browsers.ubuntu("Chrome"),
+      generateHighQualityLinkPreview: true,
+      syncFullHistory: false,
+      markOnlineOnConnect: true,
+      connectTimeoutMs: 60000,
+      qrTimeout: 60000,
+      defaultQueryTimeoutMs: 60000,
+    });
 
-  currentSock = sock;
-  setSocketInstance(sock);
+    currentSock = sock;
+    setSocketInstance(sock);
 
-  sock.ev.on("creds.update", async (creds) => {
-    state.creds = creds;
-    await saveCreds();
-  });
+    sock.ev.on("creds.update", async (creds) => {
+      state.creds = creds;
+      await saveCreds();
+    });
 
-  sock.ev.on("connection.update", async (update) => {
-    const { connection, lastDisconnect, qr } = update;
+    sock.ev.on("connection.update", async (update) => {
+      const { connection, lastDisconnect, qr } = update;
 
-    if (qr) {
-      if (pairingRequested && pendingPairingPhone) {
-        try {
-          console.log(`\n====================================`);
-          console.log(`Requesting pairing code for: ${pendingPairingPhone}`);
-          console.log(`====================================\n`);
-          
-          const code = await sock.requestPairingCode(pendingPairingPhone);
-          console.log(`Pairing code generated: ${code}`);
-          updatePairingCode(code);
-          
-          pairingRequested = false;
-          pendingPairingPhone = null;
-        } catch (error) {
-          console.error("Error requesting pairing code:", error);
-          pairingRequested = false;
-          pendingPairingPhone = null;
-          
+      if (qr) {
+        reconnectAttempts = 0;
+        
+        if (pairingMode === "code" && pendingPairingPhone) {
+          try {
+            console.log(`\n====================================`);
+            console.log(`[PAIRING] Requesting code for: ${pendingPairingPhone}`);
+            console.log(`====================================\n`);
+            
+            setConnectionState("generating_code");
+            broadcastStatus();
+            
+            const code = await sock.requestPairingCode(pendingPairingPhone);
+            const formattedCode = code.match(/.{1,4}/g)?.join("-") || code;
+            
+            console.log(`[PAIRING] Code generated: ${formattedCode}`);
+            updatePairingCode(formattedCode);
+            setConnectionState("waiting_code");
+            broadcastStatus();
+            
+            pairingMode = null;
+            pendingPairingPhone = null;
+          } catch (error) {
+            console.error("[PAIRING] Error generating code:", error);
+            
+            pairingMode = null;
+            pendingPairingPhone = null;
+            
+            console.log("\n[PAIRING] Falling back to QR code...\n");
+            console.log("====================================");
+            console.log("Scan QR Code di bawah ini dengan WhatsApp:");
+            console.log("====================================\n");
+            qrcode.generate(qr, { small: true });
+            updateQR(qr);
+            setConnectionState("waiting_scan");
+            broadcastStatus();
+          }
+        } else {
           console.log("\n====================================");
           console.log("Scan QR Code di bawah ini dengan WhatsApp:");
           console.log("====================================\n");
           qrcode.generate(qr, { small: true });
+          
           updateQR(qr);
-        }
-      } else {
-        console.log("\n====================================");
-        console.log("Scan QR Code di bawah ini dengan WhatsApp:");
-        console.log("====================================\n");
-        qrcode.generate(qr, { small: true });
-        
-        updateQR(qr);
-        
-        if (isRailway) {
-          console.log("\n[RAILWAY] QR Code juga tersedia di logs Railway Dashboard");
+          setConnectionState("waiting_scan");
+          broadcastStatus();
+          
+          if (isRailway) {
+            console.log("\n[RAILWAY] QR Code juga tersedia di logs Railway Dashboard");
+          }
         }
       }
-    }
 
-    if (connection === "close") {
-      setDisconnected();
-      clearQR();
-      clearPairingCode();
-      stopProfilePictureChanger();
-      
-      const shouldReconnect =
-        lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+      if (connection === "close") {
+        isConnecting = false;
+        setDisconnected();
+        clearQR();
+        clearPairingCode();
+        stopProfilePictureChanger();
+        broadcastStatus();
+        
+        const statusCode = lastDisconnect?.error?.output?.statusCode;
+        const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+        
+        console.log(
+          `[CONNECT] Connection closed - Status: ${statusCode}, Reason: ${lastDisconnect?.error?.message || "unknown"}, Reconnect: ${shouldReconnect}`
+        );
 
-      console.log(
-        "Connection closed due to",
-        lastDisconnect?.error?.message || "unknown reason",
-        ", reconnecting:",
-        shouldReconnect
-      );
-
-      if (shouldReconnect) {
-        setTimeout(() => {
-          connectToWhatsApp();
-        }, 5000);
-      } else {
-        console.log("Logged out. Session will be reset on next restart.");
-        if (useDBSession) {
-          console.log("Database session will be cleared.");
+        if (shouldReconnect) {
+          reconnectAttempts++;
+          
+          if (reconnectAttempts <= MAX_RECONNECT_ATTEMPTS) {
+            const delay = Math.min(RECONNECT_INTERVAL * reconnectAttempts, 30000);
+            console.log(`[CONNECT] Reconnecting in ${delay/1000}s (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+            
+            setConnectionState("reconnecting");
+            broadcastStatus();
+            
+            setTimeout(() => {
+              connectToWhatsApp();
+            }, delay);
+          } else {
+            console.log("[CONNECT] Max reconnect attempts reached. Manual restart required.");
+            setConnectionState("failed");
+            broadcastStatus();
+          }
         } else {
-          console.log("Please delete auth_info folder and restart.");
+          console.log("[CONNECT] Logged out. Session cleared.");
+          reconnectAttempts = 0;
+          
+          if (useDBSession) {
+            await clearAllSessions();
+            console.log("[CONNECT] Database session cleared.");
+          } else {
+            console.log("[CONNECT] Please delete auth_info folder and restart.");
+          }
+          
+          setConnectionState("logged_out");
+          broadcastStatus();
         }
+      } else if (connection === "open") {
+        isConnecting = false;
+        reconnectAttempts = 0;
+        pairingMode = null;
+        pendingPairingPhone = null;
+        
+        clearQR();
+        clearPairingCode();
+        
+        const user = sock.user;
+        setConnected({
+          owner: config.ownerNumber,
+          target: config.targetNumber,
+          user: user ? {
+            id: user.id,
+            name: user.name || user.verifiedName || "Unknown",
+          } : null,
+        });
+        broadcastStatus();
+        
+        console.log("\n====================================");
+        console.log("Bot WhatsApp terhubung!");
+        console.log("====================================");
+        console.log(`Environment: ${isRailway ? "Railway" : "Local/Replit"}`);
+        console.log(`Session Storage: ${useDBSession ? "Database" : "File"}`);
+        console.log(`Connected as: ${user?.name || user?.verifiedName || user?.id || "Unknown"}`);
+        console.log(`Owner Number: ${config.ownerNumber}`);
+        console.log(`Target Number: ${config.targetNumber}`);
+        console.log(`Timezone: ${config.timezone}`);
+        console.log(`Daily Report: 00:00 ${config.timezone}`);
+        console.log("====================================\n");
+
+        setupMessageHandler(sock);
+        setupCronJobs(sock);
+        setupProfilePictureChanger(sock);
       }
-    } else if (connection === "open") {
-      pairingRequested = false;
-      pendingPairingPhone = null;
-      clearQR();
-      setConnected({
-        owner: config.ownerNumber,
-        target: config.targetNumber,
-      });
-      
-      console.log("\n====================================");
-      console.log("Bot WhatsApp terhubung!");
-      console.log("====================================");
-      console.log(`Environment: ${isRailway ? "Railway" : "Local/Replit"}`);
-      console.log(`Session Storage: ${useDBSession ? "Database" : "File"}`);
-      console.log(`Owner Number: ${config.ownerNumber}`);
-      console.log(`Target Number: ${config.targetNumber}`);
-      console.log(`Timezone: ${config.timezone}`);
-      console.log(`Daily Report: 00:00 ${config.timezone}`);
-      console.log("====================================\n");
+    });
 
-      setupMessageHandler(sock);
-      setupCronJobs(sock);
-      setupProfilePictureChanger(sock);
+    return sock;
+  } catch (error) {
+    console.error("[CONNECT] Fatal error:", error);
+    isConnecting = false;
+    
+    reconnectAttempts++;
+    if (reconnectAttempts <= MAX_RECONNECT_ATTEMPTS) {
+      const delay = RECONNECT_INTERVAL * reconnectAttempts;
+      console.log(`[CONNECT] Retrying in ${delay/1000}s...`);
+      setTimeout(connectToWhatsApp, delay);
     }
-  });
-
-  return sock;
+  }
 }
+
+process.on("uncaughtException", (err) => {
+  console.error("[PROCESS] Uncaught exception:", err);
+});
+
+process.on("unhandledRejection", (err) => {
+  console.error("[PROCESS] Unhandled rejection:", err);
+});
 
 console.log("====================================");
 console.log("WhatsApp Checkpoint Bot");
@@ -195,6 +341,6 @@ console.log(`Environment: ${isRailway ? "Railway" : "Local/Replit"}`);
 console.log("Memulai bot...\n");
 
 connectToWhatsApp().catch((err) => {
-  console.error("Failed to start bot:", err);
+  console.error("[INIT] Failed to start bot:", err);
   process.exit(1);
 });
