@@ -83,6 +83,10 @@ const handleMessage = async (conn, message, store) => {
             await handleAutoFeatures(conn, m, text, botSettings);
         }
         
+        if (!isCmd && m.text) {
+            await handleGameAnswers(conn, m, { user, botSettings, store });
+        }
+        
     } catch (e) {
         logger.error(`handleMessage error: ${e.message}`);
     }
@@ -138,6 +142,27 @@ const handleGroupFeatures = async (conn, m, group, isOwner, botSettings) => {
     }
     
     return false;
+};
+
+const handleGameAnswers = async (conn, m, ctx) => {
+    try {
+        const text = m.text?.trim();
+        if (!text) return;
+        
+        const isNumeric = /^-?\d+$/.test(text);
+        const isSingleDigit = /^[1-9]$/.test(text);
+        
+        const gameCommands = require('./commands/game');
+        
+        if (isSingleDigit && gameCommands.tttmove) {
+            await gameCommands.tttmove(conn, m, { ...ctx, args: [text] });
+        }
+        
+        if (isNumeric && gameCommands.mathanswer) {
+            await gameCommands.mathanswer(conn, m, ctx);
+        }
+    } catch (e) {
+    }
 };
 
 const handleAutoFeatures = async (conn, m, text, botSettings) => {
