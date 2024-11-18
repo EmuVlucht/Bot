@@ -328,7 +328,79 @@ function getMessageContent(msg) {
     return { type: "text", text: message.conversation };
   }
   if (message.extendedTextMessage) {
-    return { type: "text", text: message.extendedTextMessage.text };
+    const extMsg = message.extendedTextMessage;
+    const contextInfo = extMsg.contextInfo;
+    
+    if (contextInfo?.quotedMessage) {
+      const quotedMsg = contextInfo.quotedMessage;
+      const quotedSender = contextInfo.participant || "unknown";
+      
+      let viewOnceInfo = null;
+      let innerMsg = null;
+      let wrapperType = null;
+      
+      if (quotedMsg.viewOnceMessage) {
+        wrapperType = "viewOnceMessage (V1)";
+        innerMsg = quotedMsg.viewOnceMessage.message;
+      } else if (quotedMsg.viewOnceMessageV2) {
+        wrapperType = "viewOnceMessageV2 (V2)";
+        innerMsg = quotedMsg.viewOnceMessageV2.message;
+      } else if (quotedMsg.viewOnceMessageV2Extension) {
+        wrapperType = "viewOnceMessageV2Extension (V2 Ext)";
+        innerMsg = quotedMsg.viewOnceMessageV2Extension.message;
+      } else if (quotedMsg.imageMessage?.viewOnce) {
+        wrapperType = "imageMessage.viewOnce";
+        innerMsg = { imageMessage: quotedMsg.imageMessage };
+      } else if (quotedMsg.videoMessage?.viewOnce) {
+        wrapperType = "videoMessage.viewOnce";
+        innerMsg = { videoMessage: quotedMsg.videoMessage };
+      } else if (quotedMsg.audioMessage?.viewOnce) {
+        wrapperType = "audioMessage.viewOnce";
+        innerMsg = { audioMessage: quotedMsg.audioMessage };
+      }
+      
+      if (innerMsg) {
+        let mediaType = "TIDAK DIKETAHUI";
+        let emoji = "❓";
+        
+        if (innerMsg.imageMessage) {
+          mediaType = "FOTO";
+          emoji = "📷";
+        } else if (innerMsg.videoMessage) {
+          mediaType = "VIDEO";
+          emoji = "🎬";
+        } else if (innerMsg.audioMessage) {
+          mediaType = "SUARA";
+          emoji = "🎵";
+        }
+        
+        console.log(`[1×] ╔══════════════════════════════════════════════════╗`);
+        console.log(`[1×] ║  PESAN SEKALI LIHAT TERDETEKSI (QUOTED)          ║`);
+        console.log(`[1×] ╠══════════════════════════════════════════════════╣`);
+        console.log(`[1×] ║ ${emoji} Jenis    : ${mediaType}`);
+        console.log(`[1×] ║ 👤 Pengirim : ${quotedSender}`);
+        console.log(`[1×] ║ 📦 Wrapper  : ${wrapperType}`);
+        console.log(`[1×] ║ 💬 Reply    : "${extMsg.text}"`);
+        console.log(`[1×] ╚══════════════════════════════════════════════════╝`);
+        console.log(`[1×] Inner Message:`, JSON.stringify(innerMsg, null, 2));
+        
+        viewOnceInfo = {
+          detected: true,
+          mediaType: mediaType,
+          sender: quotedSender,
+          wrapper: wrapperType,
+          innerMessage: innerMsg
+        };
+      }
+      
+      return { 
+        type: "text", 
+        text: extMsg.text,
+        quotedViewOnce: viewOnceInfo
+      };
+    }
+    
+    return { type: "text", text: extMsg.text };
   }
   if (message.imageMessage) {
     const hasViewOnce = message.imageMessage.viewOnce;
