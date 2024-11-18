@@ -25,7 +25,8 @@ ${data.link} Link
 ${data.sticker} Sticker
 ${data.audio} Audio
 ${data.media} Media
-${data.doc} Doc`;
+${data.doc} Doc
+${data.dll || 0} Dll`;
 }
 
 export function formatAllGroupsData(groupsData) {
@@ -44,6 +45,7 @@ export function formatAllGroupsData(groupsData) {
     message += `${group.data.audio} Audio\n`;
     message += `${group.data.media} Media\n`;
     message += `${group.data.doc} Doc\n`;
+    message += `${group.data.dll || 0} Dll\n`;
   }
   
   return message;
@@ -60,6 +62,7 @@ export function parseInitData(text) {
     link: 0,
     media: 0,
     nullMsg: 0,
+    dll: 0,
   };
   
   const lines = text.split("\n");
@@ -79,6 +82,7 @@ export function parseInitData(text) {
       else if (type === "link") data.link = num;
       else if (type === "media") data.media = num;
       else if (type === "null") data.nullMsg = num;
+      else if (type === "dll") data.dll = num;
     }
   }
   

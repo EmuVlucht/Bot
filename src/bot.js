@@ -68,6 +68,26 @@ export function setupMessageHandler(sock) {
       }
     }
   });
+
+  sock.ev.on("group-participants.update", async (update) => {
+    try {
+      const groupId = update.id;
+      const action = update.action;
+      const participants = update.participants || [];
+      
+      const isInit = await isGroupInitialized(groupId);
+      if (!isInit) return;
+      
+      if (action === "add" || action === "remove" || action === "leave") {
+        for (const participant of participants) {
+          await incrementCounter(groupId, "dll");
+          console.log(`[DLL] ${action}: ${participant} in ${groupId}`);
+        }
+      }
+    } catch (error) {
+      console.error("[DLL] Error handling group participants update:", error);
+    }
+  });
 }
 
 async function handleMessage(sock, msg) {
@@ -237,6 +257,9 @@ function getMessageContent(msg) {
     };
   }
   if (message.videoMessage) {
+    if (message.videoMessage.gifPlayback) {
+      return { type: "gif", text: "" };
+    }
     return {
       type: "video",
       text: message.videoMessage.caption || "",
@@ -299,6 +322,7 @@ async function countMessage(groupId, msg, content) {
         }
         break;
       case "sticker":
+      case "gif":
         messageType = "sticker";
         break;
       case "doc":
