@@ -96,6 +96,11 @@ export function isOwner(sender, ownerNumber) {
 export function parseLoopTime(timeStr) {
   const trimmed = timeStr.trim();
   
+  const circumflexCount = (trimmed.match(/î/g) || []).length;
+  if (circumflexCount > 0 && trimmed === "î".repeat(circumflexCount)) {
+    return circumflexCount * 1000;
+  }
+  
   const smallICount = (trimmed.match(/ì/g) || []).length;
   if (smallICount > 0 && trimmed === "ì".repeat(smallICount)) {
     return smallICount * 60 * 1000;
@@ -125,7 +130,7 @@ export function parseLoopCommand(text) {
     return { type: "stop" };
   }
   
-  const loopMatch = text.match(/^([ìÏiI]+)\s*;\s*(.+)$/s);
+  const loopMatch = text.match(/^([îìÏiI]+)\s*;\s*(.+)$/s);
   if (loopMatch) {
     const timeStr = loopMatch[1];
     const message = loopMatch[2].trim();
@@ -140,15 +145,19 @@ export function parseLoopCommand(text) {
 }
 
 export function formatInterval(ms) {
-  const minutes = Math.floor(ms / (60 * 1000));
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
   const remainingMinutes = minutes % 60;
+  const remainingSeconds = seconds % 60;
   
   if (hours > 0 && remainingMinutes > 0) {
     return `${hours} jam ${remainingMinutes} menit`;
   } else if (hours > 0) {
     return `${hours} jam`;
-  } else {
+  } else if (minutes > 0) {
     return `${minutes} menit`;
+  } else {
+    return `${remainingSeconds} detik`;
   }
 }
