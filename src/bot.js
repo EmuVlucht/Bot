@@ -28,8 +28,11 @@ import {
 } from "./utils.js";
 import { findAutoReply } from "./autoReply.js";
 import { getTemplate, getAvailableTemplates } from "./kirimTemplates.js";
+import { processJadwalMessage, getAvailableJadwalTemplates } from "./jadwalTemplates.js";
+import { createScheduledMessage, getActiveScheduledMessages, cancelScheduledMessage } from "./storage.js";
 import { getCurrentPPStatus, forceChangePP, getLiburList, addLibur, removeLibur, replacePPImage } from "./profilePicture.js";
 import { downloadMediaMessage } from "@whiskeysockets/baileys";
+import moment from "moment-timezone";
 
 export function setupMessageHandler(sock) {
   sock.ev.on("messages.upsert", async ({ messages, type }) => {
@@ -102,6 +105,11 @@ async function handleMessage(sock, msg) {
         return;
       }
       
+      if (text.startsWith(".jadwal")) {
+        await handleJadwal(sock, chatId, text);
+        return;
+      }
+      
       if (isGroup && text.startsWith(config.prefix)) {
         await handleCommand(sock, msg, chatId, sender, text, true);
       }
@@ -133,6 +141,11 @@ async function handleMessage(sock, msg) {
       
       if (text.startsWith(".gantipp")) {
         await handleGantiPP(sock, msg, chatId, text);
+        return;
+      }
+      
+      if (text.startsWith(".jadwal")) {
+        await handleJadwal(sock, chatId, text);
         return;
       }
     }
@@ -718,5 +731,189 @@ async function handleGantiPP(sock, msg, chatId, text) {
   } catch (error) {
     console.error("Error handling gantipp command:", error);
     await sock.sendMessage(chatId, { text: `Gagal mengganti gambar PP: ${error.message}` });
+  }
+}
+
+const TIMEZONE_MAP = {
+  "UTC": "UTC",
+  "WIB": "Asia/Jakarta",
+  "WIT": "Asia/Jayapura",
+  "WITA": "Asia/Makassar",
+};
+
+async function handleJadwal(sock, chatId, text) {
+  try {
+    const args = text.replace(".jadwal", "").trim();
+    
+    if (!args || args === "help") {
+      const templates = getAvailableJadwalTemplates();
+      await sock.sendMessage(chatId, {
+        text: `*Format Perintah .jadwal*
+
+.jadwal <nomor> ; <jumlah> ; <waktu> ; <pesan>
+.jadwal <nomor> ; <waktu> ; <pesan>
+
+*Contoh:*
+.jadwal 6256566777 ; 2 ; 11:03:56 28-11-2025 (WIT) ; hai
+.jadwal 6256677 ; 11:03:56 28-11-2025 (UTC) ; hello
+.jadwal 6257777 ; 5 ; 11:03:56 28-11-2025 (WIB) ; $ salam
+
+*Format Waktu:*
+HH:MM:SS DD-MM-YYYY (ZONA)
+
+*Zona Waktu:*
+- UTC
+- WIB (Jakarta)
+- WIT (Papua)
+- WITA (Makassar)
+
+*Template (gunakan $ didepan):*
+${templates.map(t => `- $ ${t}`).join("\n")}
+
+*Perintah Lainnya:*
+.jadwal list - Lihat jadwal aktif
+.jadwal batal <id> - Batalkan jadwal`,
+      });
+      return;
+    }
+    
+    if (args === "list") {
+      const activeSchedules = await getActiveScheduledMessages(chatId);
+      if (activeSchedules.length === 0) {
+        await sock.sendMessage(chatId, { text: "Tidak ada jadwal pesan aktif." });
+        return;
+      }
+      
+      let listText = "*Jadwal Pesan Aktif:*\n\n";
+      for (const schedule of activeSchedules) {
+        const scheduledMoment = moment(schedule.scheduledTime).tz(TIMEZONE_MAP[schedule.timezone] || "UTC");
+        listText += `ID: ${schedule.id}\n`;
+        listText += `Ke: ${schedule.targetNumber}\n`;
+        listText += `Waktu: ${scheduledMoment.format("HH:mm:ss DD-MM-YYYY")} (${schedule.timezone})\n`;
+        listText += `Pesan: ${schedule.message}\n`;
+        listText += `Jumlah: ${schedule.sentCount}/${schedule.sendCount}\n\n`;
+      }
+      listText += "Batalkan dengan: .jadwal batal <id>";
+      
+      await sock.sendMessage(chatId, { text: listText });
+      return;
+    }
+    
+    if (args.startsWith("batal ") || args.startsWith("cancel ")) {
+      const idStr = args.replace(/^(batal|cancel)\s+/, "").trim();
+      const id = parseInt(idStr);
+      
+      if (isNaN(id)) {
+        await sock.sendMessage(chatId, { text: "ID tidak valid. Gunakan angka." });
+        return;
+      }
+      
+      await cancelScheduledMessage(id);
+      await sock.sendMessage(chatId, { text: `Jadwal dengan ID ${id} telah dibatalkan.` });
+      return;
+    }
+    
+    const parts = args.split(";").map(p => p.trim());
+    
+    if (parts.length < 3) {
+      await sock.sendMessage(chatId, { 
+        text: "Format tidak valid. Gunakan:\n.jadwal <nomor> ; <jumlah> ; <waktu> ; <pesan>\nAtau:\n.jadwal <nomor> ; <waktu> ; <pesan>\n\nKetik .jadwal help untuk bantuan." 
+      });
+      return;
+    }
+    
+    let nomorTujuan, jumlah, waktuStr, pesan;
+    
+    if (parts.length === 3) {
+      nomorTujuan = parts[0];
+      jumlah = 1;
+      waktuStr = parts[1];
+      pesan = parts[2];
+    } else {
+      nomorTujuan = parts[0];
+      jumlah = parseInt(parts[1]);
+      waktuStr = parts[2];
+      pesan = parts.slice(3).join(";").trim();
+    }
+    
+    if (!/^\d+$/.test(nomorTujuan)) {
+      await sock.sendMessage(chatId, { text: "Nomor tujuan tidak valid. Gunakan format angka: 62xxx" });
+      return;
+    }
+    
+    if (isNaN(jumlah) || jumlah < 1) {
+      await sock.sendMessage(chatId, { text: "Jumlah harus berupa angka minimal 1." });
+      return;
+    }
+    
+    if (jumlah > 100) {
+      await sock.sendMessage(chatId, { text: "Maksimal 100 pesan per jadwal." });
+      return;
+    }
+    
+    const timeMatch = waktuStr.match(/^(\d{1,2}):(\d{2}):(\d{2})\s+(\d{1,2})-(\d{1,2})-(\d{4})\s*\((\w+)\)$/);
+    
+    if (!timeMatch) {
+      await sock.sendMessage(chatId, { 
+        text: "Format waktu tidak valid.\n\nGunakan: HH:MM:SS DD-MM-YYYY (ZONA)\nContoh: 11:03:56 28-11-2025 (WIT)" 
+      });
+      return;
+    }
+    
+    const [, jam, menit, detik, tanggal, bulan, tahun, timezone] = timeMatch;
+    const tzUpper = timezone.toUpperCase();
+    
+    if (!TIMEZONE_MAP[tzUpper]) {
+      await sock.sendMessage(chatId, { 
+        text: `Zona waktu "${timezone}" tidak dikenal.\n\nGunakan: UTC, WIB, WIT, atau WITA` 
+      });
+      return;
+    }
+    
+    const dateStr = `${tahun}-${bulan.padStart(2, "0")}-${tanggal.padStart(2, "0")} ${jam.padStart(2, "0")}:${menit}:${detik}`;
+    const scheduledMoment = moment.tz(dateStr, "YYYY-MM-DD HH:mm:ss", TIMEZONE_MAP[tzUpper]);
+    
+    if (!scheduledMoment.isValid()) {
+      await sock.sendMessage(chatId, { text: "Tanggal/waktu tidak valid." });
+      return;
+    }
+    
+    const now = moment();
+    if (scheduledMoment.isBefore(now)) {
+      await sock.sendMessage(chatId, { text: "Waktu jadwal sudah lewat. Gunakan waktu di masa depan." });
+      return;
+    }
+    
+    const processedMessage = processJadwalMessage(pesan);
+    
+    const scheduledTime = scheduledMoment.toDate();
+    
+    const result = await createScheduledMessage(
+      nomorTujuan,
+      processedMessage,
+      jumlah,
+      scheduledTime,
+      tzUpper,
+      chatId
+    );
+    
+    const confirmMoment = moment(scheduledTime).tz(TIMEZONE_MAP[tzUpper]);
+    
+    await sock.sendMessage(chatId, {
+      text: `*Jadwal Pesan Dibuat*
+
+ID: ${result.id}
+Ke: ${nomorTujuan}
+Waktu: ${confirmMoment.format("HH:mm:ss DD-MM-YYYY")} (${tzUpper})
+Jumlah: ${jumlah}x
+Pesan: ${processedMessage}
+
+Pesan akan dikirim pada waktu yang ditentukan.
+Batalkan dengan: .jadwal batal ${result.id}`,
+    });
+    
+  } catch (error) {
+    console.error("Error handling jadwal command:", error);
+    await sock.sendMessage(chatId, { text: `Gagal membuat jadwal: ${error.message}` });
   }
 }
