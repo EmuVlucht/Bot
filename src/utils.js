@@ -100,7 +100,7 @@ export function isOwner(sender, ownerNumber) {
 export function parseLoopTime(timeStr) {
   const trimmed = timeStr.trim().toLowerCase();
   
-  const timeMap = {
+  const baseTimeMap = {
     "1s": 1000,
     "2s": 2000,
     "1m": 60 * 1000,
@@ -109,11 +109,21 @@ export function parseLoopTime(timeStr) {
     "1h": 60 * 60 * 1000,
   };
   
-  if (timeMap[trimmed]) {
-    return timeMap[trimmed];
+  const baseMatch = trimmed.match(/^(1s|2s|1m|10m|30m|1h)(\$*)$/i);
+  if (!baseMatch) {
+    return null;
   }
   
-  return null;
+  const baseTime = baseMatch[1].toLowerCase();
+  const dollarCount = baseMatch[2].length;
+  const baseMs = baseTimeMap[baseTime];
+  
+  if (!baseMs) {
+    return null;
+  }
+  
+  const multiplier = 1 + dollarCount;
+  return baseMs * multiplier;
 }
 
 export function parseLoopCommand(text) {
@@ -122,11 +132,11 @@ export function parseLoopCommand(text) {
     return { type: "stop" };
   }
   
-  const loopWithCountMatch = text.match(/^(1s|2s|1m|10m|30m|1h)\s*;\s*(\d+)\s*;\s*(.+)$/is);
+  const loopWithCountMatch = text.match(/^(1s|2s|1m|10m|30m|1h)(\$*)\s*;\s*(\d+)\s*;\s*(.+)$/is);
   if (loopWithCountMatch) {
-    const timeStr = loopWithCountMatch[1];
-    const count = parseInt(loopWithCountMatch[2], 10);
-    const message = loopWithCountMatch[3].trim();
+    const timeStr = loopWithCountMatch[1] + loopWithCountMatch[2];
+    const count = parseInt(loopWithCountMatch[3], 10);
+    const message = loopWithCountMatch[4].trim();
     const intervalMs = parseLoopTime(timeStr);
     
     if (intervalMs && message && count > 0) {
@@ -134,10 +144,10 @@ export function parseLoopCommand(text) {
     }
   }
   
-  const loopSimpleMatch = text.match(/^(1s|2s|1m|10m|30m|1h)\s*;\s*(.+)$/is);
+  const loopSimpleMatch = text.match(/^(1s|2s|1m|10m|30m|1h)(\$*)\s*;\s*(.+)$/is);
   if (loopSimpleMatch) {
-    const timeStr = loopSimpleMatch[1];
-    const message = loopSimpleMatch[2].trim();
+    const timeStr = loopSimpleMatch[1] + loopSimpleMatch[2];
+    const message = loopSimpleMatch[3].trim();
     const intervalMs = parseLoopTime(timeStr);
     
     if (intervalMs && message) {
