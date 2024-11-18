@@ -1,0 +1,40 @@
+modules = ["nodejs-20", "replit-rtld-loader"]
+
+[agent]
+expertMode = true
+
+[nix]
+channel = "stable-25_05"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Ciel Bot"
+
+[[workflows.workflow]]
+name = "Ciel Bot"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd ciel && node src/index.js"
+waitForPort = 5000
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[userenv]
+
+[userenv.shared]
+RAILWAY_DATABASE_URL = "postgresql://postgres:VSktFuvpEIgHCnIDpNnXXnCSZlotLNUI@shinkansen.proxy.rlwy.net:22870/railway"
