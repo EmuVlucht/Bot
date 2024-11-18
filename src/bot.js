@@ -68,7 +68,7 @@ async function handleMessage(sock, msg) {
       }
       
       if (isGroup && text.startsWith(config.prefix)) {
-        await handleCommand(sock, msg, chatId, sender, text);
+        await handleCommand(sock, msg, chatId, sender, text, true);
       }
       return;
     }
@@ -85,7 +85,7 @@ async function handleMessage(sock, msg) {
     if (!isGroup) return;
 
     if (text.startsWith(config.prefix)) {
-      await handleCommand(sock, msg, chatId, sender, text);
+      await handleCommand(sock, msg, chatId, sender, text, ownerCheck);
     } else {
       const isInit = await isGroupInitialized(chatId);
       if (isInit) {
@@ -214,10 +214,8 @@ async function countMessage(groupId, msg, content) {
   }
 }
 
-async function handleCommand(sock, msg, groupId, sender, text) {
-  const ownerJid = formatOwnerJid(config.ownerNumber);
-
-  if (!isOwner(sender, config.ownerNumber)) {
+async function handleCommand(sock, msg, groupId, sender, text, isAuthorized = false) {
+  if (!isAuthorized && !isOwner(sender, config.ownerNumber)) {
     return;
   }
 
