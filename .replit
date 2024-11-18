@@ -40,9 +40,11 @@ localPort = 38369
 externalPort = 3001
 
 [[ports]]
-localPort = 39315
-externalPort = 3003
-
-[[ports]]
 localPort = 43865
 externalPort = 3000
+
+[userenv]
+
+[userenv.shared]
+OWNER_NUMBER = "6285126033675"
+TARGET_NUMBER = "6285126033675"
