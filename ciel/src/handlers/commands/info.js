@@ -40,13 +40,23 @@ ${greeting}, ${m.pushName}!
 │ .instagram - Download IG
 │ .youtube - Download YT
 │ .spotify - Download Spotify
+│ .pinterest - Cari gambar
+│ .douyin - Download Douyin
+│ .pixiv - Download Pixiv
 ╰━━━━━━━━━━━━━━━
 
 ╭━━━[ *GAME* ]━━━
 │ .tictactoe - Main TTT
 │ .slot - Mesin slot
+│ .casino - Casino solo
+│ .samgong - Kartu samgong
+│ .begal - Game begal
+│ .merampok - Rampok user
 │ .daily - Claim harian
+│ .weekly - Claim mingguan
 │ .transfer - Kirim uang
+│ .buylimit - Beli limit
+│ .leaderboard - Top player
 ╰━━━━━━━━━━━━━━━
 
 ╭━━━[ *GROUP* ]━━━

@@ -407,6 +407,61 @@ const douyin = async (conn, m, { text }) => {
 
 const dy = douyin;
 
+const pixiv = async (conn, m, { text }) => {
+    if (!text) return m.reply('Masukkan link Pixiv atau keyword pencarian!\nContoh: .pixiv https://www.pixiv.net/en/artworks/123456\nAtau: .pixiv anime girl');
+    
+    await m.reply(settings.messages.wait);
+    
+    try {
+        const { pixivdl } = require('../../../lib/pixiv');
+        const result = await pixivdl(text);
+        
+        if (!result || !result.media || !result.media.length) {
+            return m.reply('Gambar tidak ditemukan!');
+        }
+        
+        const caption = `*🎨 Pixiv Download*
+
+*Artist:* ${result.artist}
+*Title:* ${result.caption}
+*Tags:* ${result.tags?.slice(0, 5).join(', ') || '-'}`;
+        
+        const images = result.media.slice(0, 5);
+        let isFirst = true;
+        
+        for (const img of images) {
+            try {
+                const imgUrl = typeof img === 'string' ? img : img.original || img.url;
+                if (!imgUrl) continue;
+                
+                const imageBuffer = await axios.get(imgUrl, { 
+                    responseType: 'arraybuffer',
+                    timeout: 30000,
+                    headers: {
+                        'Referer': 'https://www.pixiv.net/',
+                        'User-Agent': 'Mozilla/5.0'
+                    }
+                });
+                
+                await conn.sendMessage(m.chat, {
+                    image: Buffer.from(imageBuffer.data),
+                    caption: isFirst ? caption : ''
+                }, { quoted: m });
+                
+                isFirst = false;
+            } catch (imgErr) {
+                console.error('Pixiv image download error:', imgErr.message);
+            }
+        }
+        
+    } catch (e) {
+        console.error('Pixiv error:', e);
+        m.reply(`Gagal download dari Pixiv! ${e.message || 'Coba lagi nanti.'}`);
+    }
+};
+
+const pxv = pixiv;
+
 module.exports = {
     tiktok,
     tt,
@@ -433,5 +488,7 @@ module.exports = {
     mediafire,
     mf,
     douyin,
-    dy
+    dy,
+    pixiv,
+    pxv
 };
