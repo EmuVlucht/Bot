@@ -1,19 +1,27 @@
-FROM node:lts-buster
+FROM node:20-alpine
 
-RUN apt-get update && \
-  apt-get install -y \
-  ffmpeg \
-  imagemagick \
-  webp && \
-  apt-get upgrade -y && \
-  rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache \
+    ffmpeg \
+    imagemagick \
+    libwebp-tools \
+    python3 \
+    make \
+    g++ \
+    git \
+    openssl
 
-COPY package.json .
+WORKDIR /app
+
+COPY package*.json ./
 
 RUN npm install
 
 COPY . .
 
+RUN npx prisma generate
+
 EXPOSE 5000
 
-RUN npm start
+ENV NODE_ENV=production
+
+CMD ["npm", "start"]

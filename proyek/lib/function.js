@@ -11,11 +11,11 @@ const moment = require('moment-timezone');
 const { defaultMaxListeners } = require('stream');
 const { sizeFormatter } = require('human-readable');
 const { exec, spawn, execSync } = require('child_process');
-const { proto, areJidsSameUser, extractMessageContent, downloadContentFromMessage, getContentType, getDevice } = require('baileys');
+const { proto, areJidsSameUser, extractMessageContent, downloadContentFromMessage, getContentType, getDevice } = require('@whiskeysockets/baileys');
 const pool = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'.split('');
 
 const unsafeAgent = new https.Agent({
-	rejectUnauthorized: false
+        rejectUnauthorized: false
 });
 
 const unixTimestampSeconds = (date = new Date()) => Math.floor(date.getTime() / 1000)
@@ -28,12 +28,12 @@ const generateMessageTag = (epoch) => {
 }
 
 const processTime = (timestamp, now) => {
-	return moment.duration(now - moment(timestamp * 1000)).asSeconds()
+        return moment.duration(now - moment(timestamp * 1000)).asSeconds()
 }
 
 const webApi = (a, b, c, d, e, f) => {
-	const hasil = a + b + c + d + e + f;
-	return hasil;
+        const hasil = a + b + c + d + e + f;
+        return hasil;
 }
 
 const getRandom = (ext) => {
@@ -41,60 +41,60 @@ const getRandom = (ext) => {
 }
 
 const getBuffer = async (url, options = {}) => {
-	try {
-		const { data } = await axios.get(url, {
-			headers: {
-				'DNT': 1,
-				'Upgrade-Insecure-Request': 1
-			},
-			responseType: 'arraybuffer',
-			httpsAgent: unsafeAgent,
-			...options
-		})
-		return data
-	} catch (e) {
-		try {
-			const res = await fetch(url, { agent: unsafeAgent });
-			const anu = await res.buffer()
-			return anu
-		} catch (e) {
-			return e
-		}
-	}
+        try {
+                const { data } = await axios.get(url, {
+                        headers: {
+                                'DNT': 1,
+                                'Upgrade-Insecure-Request': 1
+                        },
+                        responseType: 'arraybuffer',
+                        httpsAgent: unsafeAgent,
+                        ...options
+                })
+                return data
+        } catch (e) {
+                try {
+                        const res = await fetch(url, { agent: unsafeAgent });
+                        const anu = await res.buffer()
+                        return anu
+                } catch (e) {
+                        return e
+                }
+        }
 }
 
 const fetchJson = async (url, options = {}) => {
-	try {
-		const { data } = await axios.get(url, {
-			headers: {
-				'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36'
-			},
-			httpsAgent: unsafeAgent,
-			...options
-		})
-		return data
-	} catch (e) {
-		try {
-			const res = await fetch(url, { agent: unsafeAgent });
-			const anu = await res.json()
-			return anu
-		} catch (e) {
-			return e
-		}
-	}
+        try {
+                const { data } = await axios.get(url, {
+                        headers: {
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36'
+                        },
+                        httpsAgent: unsafeAgent,
+                        ...options
+                })
+                return data
+        } catch (e) {
+                try {
+                        const res = await fetch(url, { agent: unsafeAgent });
+                        const anu = await res.json()
+                        return anu
+                } catch (e) {
+                        return e
+                }
+        }
 }
 
 const runtime = function(seconds) {
-	seconds = Number(seconds);
-	var d = Math.floor(seconds / (3600 * 24));
-	var h = Math.floor(seconds % (3600 * 24) / 3600);
-	var m = Math.floor(seconds % 3600 / 60);
-	var s = Math.floor(seconds % 60);
-	var dDisplay = d > 0 ? d + (d == 1 ? " day, " : " days, ") : "";
-	var hDisplay = h > 0 ? h + (h == 1 ? " hour, " : " hours, ") : "";
-	var mDisplay = m > 0 ? m + (m == 1 ? " minute, " : " minutes, ") : "";
-	var sDisplay = s > 0 ? s + (s == 1 ? " second" : " seconds") : "";
-	return dDisplay + hDisplay + mDisplay + sDisplay;
+        seconds = Number(seconds);
+        var d = Math.floor(seconds / (3600 * 24));
+        var h = Math.floor(seconds % (3600 * 24) / 3600);
+        var m = Math.floor(seconds % 3600 / 60);
+        var s = Math.floor(seconds % 60);
+        var dDisplay = d > 0 ? d + (d == 1 ? " day, " : " days, ") : "";
+        var hDisplay = h > 0 ? h + (h == 1 ? " hour, " : " hours, ") : "";
+        var mDisplay = m > 0 ? m + (m == 1 ? " minute, " : " minutes, ") : "";
+        var sDisplay = s > 0 ? s + (s == 1 ? " second" : " seconds") : "";
+        return dDisplay + hDisplay + mDisplay + sDisplay;
 }
 
 const clockString = (ms) => {
@@ -113,42 +113,42 @@ const isUrl = (url) => {
 }
 
 const getTime = (format, date) => {
-	if (date) {
-		return moment(date).locale('id').format(format)
-	} else {
-		return moment.tz('Asia/Jakarta').locale('id').format(format)
-	}
+        if (date) {
+                return moment(date).locale('id').format(format)
+        } else {
+                return moment.tz('Asia/Jakarta').locale('id').format(format)
+        }
 }
 
 const formatDate = (n, locale = 'id') => {
-	let d = new Date(n)
-	return d.toLocaleDateString(locale, {
-		weekday: 'long',
-		day: 'numeric',
-		month: 'long',
-		year: 'numeric',
-		hour: 'numeric',
-		minute: 'numeric',
-		second: 'numeric'
-	})
+        let d = new Date(n)
+        return d.toLocaleDateString(locale, {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+                second: 'numeric'
+        })
 }
 
 const tanggal = (numer) => {
-	myMonths = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
-	myDays = ['Minggu','Senin','Selasa','Rabu','Kamis','Jum’at','Sabtu']; 
-	var tgl = new Date(numer);
-	var day = tgl.getDate()
-	bulan = tgl.getMonth()
-	var thisDay = tgl.getDay(),
-	thisDay = myDays[thisDay];
-	var yy = tgl.getYear()
-	var year = (yy < 1000) ? yy + 1900 : yy; 
-	const time = moment.tz('Asia/Jakarta').format('DD/MM HH:mm:ss')
-	let d = new Date
-	let locale = 'id'
-	let gmt = new Date(0).getTime() - new Date('1 January 1970').getTime()
-	let weton = ['Pahing', 'Pon','Wage','Kliwon','Legi'][Math.floor(((d * 1) + gmt) / 84600000) % 5]
-	return`${thisDay}, ${day} - ${myMonths[bulan]} - ${year}`
+        myMonths = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+        myDays = ['Minggu','Senin','Selasa','Rabu','Kamis','Jum’at','Sabtu']; 
+        var tgl = new Date(numer);
+        var day = tgl.getDate()
+        bulan = tgl.getMonth()
+        var thisDay = tgl.getDay(),
+        thisDay = myDays[thisDay];
+        var yy = tgl.getYear()
+        var year = (yy < 1000) ? yy + 1900 : yy; 
+        const time = moment.tz('Asia/Jakarta').format('DD/MM HH:mm:ss')
+        let d = new Date
+        let locale = 'id'
+        let gmt = new Date(0).getTime() - new Date('1 January 1970').getTime()
+        let weton = ['Pahing', 'Pon','Wage','Kliwon','Legi'][Math.floor(((d * 1) + gmt) / 84600000) % 5]
+        return`${thisDay}, ${day} - ${myMonths[bulan]} - ${year}`
 }
 
 const formatp = sizeFormatter({
@@ -163,47 +163,47 @@ const jsonformat = (string) => {
 }
 
 const reSize = async (image, ukur1 = 100, ukur2 = 100) => {
-	return new Promise(async(resolve, reject) => {
-		try {
-			const read = await Jimp.read(image);
-			const result = await read.resize(ukur1, ukur2).getBufferAsync(Jimp.MIME_JPEG)
-			resolve(result)
-		} catch (e) {
-			reject(e)
-		}
-	})
+        return new Promise(async(resolve, reject) => {
+                try {
+                        const read = await Jimp.read(image);
+                        const result = await read.resize(ukur1, ukur2).getBufferAsync(Jimp.MIME_JPEG)
+                        resolve(result)
+                } catch (e) {
+                        reject(e)
+                }
+        })
 }
 
 const toHD = async (image) => {
-	return new Promise(async(resolve, reject) => {
-		try {
-			const read = await Jimp.read(image);
-			const newWidth = read.bitmap.width * 4;
-			const newHeight = read.bitmap.height * 4;
-			const result = await read.resize(newWidth, newHeight).getBufferAsync(Jimp.MIME_JPEG)
-			resolve(result)
-		} catch (e) {
-			reject(e)
-		}
-	})
+        return new Promise(async(resolve, reject) => {
+                try {
+                        const read = await Jimp.read(image);
+                        const newWidth = read.bitmap.width * 4;
+                        const newHeight = read.bitmap.height * 4;
+                        const result = await read.resize(newWidth, newHeight).getBufferAsync(Jimp.MIME_JPEG)
+                        resolve(result)
+                } catch (e) {
+                        reject(e)
+                }
+        })
 }
 
 const logic = (check, inp, out) => {
-	if (inp.length !== out.length) throw new Error('Input and Output must have same length')
-	for (let i in inp)
-		if (util.isDeepStrictEqual(check, inp[i])) return out[i]
-	return null
+        if (inp.length !== out.length) throw new Error('Input and Output must have same length')
+        for (let i in inp)
+                if (util.isDeepStrictEqual(check, inp[i])) return out[i]
+        return null
 }
 
 const generateProfilePicture = async (buffer) => {
-	const jimp = await Jimp.read(buffer)
-	const min = jimp.getWidth()
-	const max = jimp.getHeight()
-	const cropped = jimp.crop(0, 0, min, max)
-	return {
-		img: await cropped.scaleToFit(720, 720).getBufferAsync(Jimp.MIME_JPEG),
-		preview: await cropped.scaleToFit(720, 720).getBufferAsync(Jimp.MIME_JPEG)
-	}
+        const jimp = await Jimp.read(buffer)
+        const min = jimp.getWidth()
+        const max = jimp.getHeight()
+        const cropped = jimp.crop(0, 0, min, max)
+        return {
+                img: await cropped.scaleToFit(720, 720).getBufferAsync(Jimp.MIME_JPEG),
+                preview: await cropped.scaleToFit(720, 720).getBufferAsync(Jimp.MIME_JPEG)
+        }
 }
 
 const bytesToSize = (bytes, decimals = 2) => {
@@ -258,36 +258,36 @@ const generateAuthToken = (size) => {
 }
 
 const cekMenfes = (tag, nomer, db_menfes) => {
-	let x1 = false
-	Object.keys(db_menfes).forEach((i) => {
-		if (db_menfes[i].id == nomer){
-			x1 = i
-		}
-	})
-	if (x1 !== false) {
-		if (tag == 'id'){
-			return db_menfes[x1].id
-		}
-		if (tag == 'teman'){
-			return db_menfes[x1].teman
-		}
-	}
-	if (x1 == false) {
-		return null
-	}
+        let x1 = false
+        Object.keys(db_menfes).forEach((i) => {
+                if (db_menfes[i].id == nomer){
+                        x1 = i
+                }
+        })
+        if (x1 !== false) {
+                if (tag == 'id'){
+                        return db_menfes[x1].id
+                }
+                if (tag == 'teman'){
+                        return db_menfes[x1].teman
+                }
+        }
+        if (x1 == false) {
+                return null
+        }
 }
 
 function assertInstalled(cmd, name, code) {
-	try {
-		execSync(cmd, { stdio: 'ignore' });
-	} catch (e) {
-		console.error(chalk.redBright(`❌  ${name} is not installed or not in PATH.`) +`\nPlease install it first and run the script again.\n`);
-		process.exit(code);
-	}
+        try {
+                execSync(cmd, { stdio: 'ignore' });
+        } catch (e) {
+                console.error(chalk.redBright(`❌  ${name} is not installed or not in PATH.`) +`\nPlease install it first and run the script again.\n`);
+                process.exit(code);
+        }
 }
 
 function format(...args) {
-	return util.format(...args)
+        return util.format(...args)
 }
 
 function generateToken() {
@@ -338,23 +338,23 @@ function readFileJson(file) {
 }
 
 async function getTypeUrlMedia(url) {
-	return new Promise(async (resolve, reject) => {
-		try {
-			const buffer = await axios.get(url, { responseType: 'arraybuffer' });
-			const type = buffer.headers['content-type'] || (await FileType.fromBuffer(buffer.data)).mime
-			resolve({ type, url })
-		} catch (e) {
-			reject(e)
-		}
-	})
+        return new Promise(async (resolve, reject) => {
+                try {
+                        const buffer = await axios.get(url, { responseType: 'arraybuffer' });
+                        const type = buffer.headers['content-type'] || (await FileType.fromBuffer(buffer.data)).mime
+                        resolve({ type, url })
+                } catch (e) {
+                        reject(e)
+                }
+        })
 }
 
 function pickRandom(list) {
-	return list[Math.floor(list.length * Math.random())]
+        return list[Math.floor(list.length * Math.random())]
 }
 
 function convertTimestampToDate(timestamp) {
-	return timestamp ? new Date(timestamp * 1000).toISOString().replace("T", " ").split(".")[0] : 'N/A'
+        return timestamp ? new Date(timestamp * 1000).toISOString().replace("T", " ").split(".")[0] : 'N/A'
 }
 
 function isCommandAvailable(command) {
@@ -380,20 +380,20 @@ async function getAllHTML(urls) {
 }
 
 function tarBackup(source, output) {
-	return new Promise((resolve, reject) => {
-		exec(`tar -czf ${output} --exclude=${output} --exclude='./node_modules' ${source}`, (err, stdout, stderr) => {
-			if (err) return reject(err);
-			resolve(output);
-		})
-	})
+        return new Promise((resolve, reject) => {
+                exec(`tar -czf ${output} --exclude=${output} --exclude='./node_modules' ${source}`, (err, stdout, stderr) => {
+                        if (err) return reject(err);
+                        resolve(output);
+                })
+        })
 }
 
 module.exports = { unixTimestampSeconds, generateMessageTag, processTime, webApi, getRandom, getBuffer, fetchJson, runtime, clockString, sleep, isUrl, getTime, formatDate, tanggal, formatp, jsonformat, reSize, toHD, logic, generateProfilePicture, assertInstalled, bytesToSize, errorCache, normalize, getSizeMedia, parseMention, getGroupAdmins, readFileTxt, readFileJson, isCommandAvailable, getHashedPassword, generateAuthToken, cekMenfes, generateToken, batasiTeks, randomText, isEmoji, getTypeUrlMedia, pickRandom, convertTimestampToDate, getAllHTML, tarBackup };
 
 let file = require.resolve(__filename)
 fs.watchFile(file, () => {
-	fs.unwatchFile(file)
-	console.log(chalk.redBright(`Update ${__filename}`))
-	delete require.cache[file]
-	require(file)
+        fs.unwatchFile(file)
+        console.log(chalk.redBright(`Update ${__filename}`))
+        delete require.cache[file]
+        require(file)
 })

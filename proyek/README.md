@@ -1,96 +1,255 @@
-## Information
+# Naze Bot - WhatsApp Bot
 
-<div align="center">
-<a href="https://github.com/nazedev/hitori/watchers"><img title="Watchers" src="https://img.shields.io/github/watchers/nazedev/hitori?label=Watchers&color=green&style=flat-square"></a>
-<a href="https://github.com/nazedev/hitori/network/members"><img title="Forks" src="https://img.shields.io/github/forks/nazedev/hitori?label=Forks&color=blue&style=flat-square"></a>
-<a href="https://github.com/nazedev/hitori/stargazers"><img title="Stars" src="https://img.shields.io/github/stars/nazedev/hitori?label=Stars&color=yellow&style=flat-square"></a>
-<a href="https://github.com/nazedev/hitori/issues"><img title="Issues" src="https://img.shields.io/github/issues/nazedev/hitori?label=Issues&color=success&style=flat-square"></a>
-<a href="https://github.com/nazedev/hitori/issues?q=is%3Aissue+is%3Aclosed"><img title="Issues" src="https://img.shields.io/github/issues-closed/nazedev/hitori?label=Issues&color=red&style=flat-square"></a>
-<a href="https://github.com/nazedev/hitori/pulls"><img title="Pull Request" src="https://img.shields.io/github/issues-pr/nazedev/hitori?label=PullRequest&color=success&style=flat-square"></a>
-<a href="https://github.com/nazedev/hitori/pulls?q=is%3Apr+is%3Aclosed"><img title="Pull Request" src="https://img.shields.io/github/issues-pr-closed/nazedev/hitori?label=PullRequest&color=red&style=flat-square"></a>
-</div>
+WhatsApp Bot dengan @whiskeysockets/baileys dan PostgreSQL (Prisma ORM).
 
-This script is created by [Nazedev](https://github.com/nazedev) using Node.js and the [WhiskeySocket/Baileys](https://github.com/WhiskeySockets/Baileys) library. The script is currently in the development phase (BETA), so there may still be some errors that can be ignored. If errors persist even after debugging, please contact the owner for assistance. ~ By Naze
+## Features
 
-## Contributor
+| Menu | Bot | Group | Search | Download | Tools | AI | Game | Fun | Owner |
+|------|-----|-------|--------|----------|-------|----|----- |-----|-------|
+| Work | ✅  | ✅     | ✅      | ✅        | ✅     | ✅  | ✅    | ✅   | ✅     |
 
-- [NazeDev](https://github.com/nazedev) (Pembuat)
-- [Zaynn](https://github.com/ZaynRcK) (Penyedia Layanan API)
-- [Dani](https://github.com/nazedev) (Penyumbang Code)
-
-#### Join Group
-[![Grup WhatsApp](https://img.shields.io/badge/WhatsApp%20Group-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://chat.whatsapp.com/Hx9vcBVhbc04KLVGPFtH2R) 
+- Multi-platform deployment (Railway, Replit, Pterodactyl, VPS/Termux)
+- PostgreSQL database dengan Prisma ORM
+- Support QR Code & Pairing Code
+- Multi-session (JadiBot)
+- Game, AI, Download, dan banyak lagi
 
 ---
-#### Deploy to Heroku
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/nazedev/hitori)
 
-#### Heroku Buildpack
-| Build Pack | LINK |
-|--------|--------|
-| **NODEJS** | heroku/nodejs |
-| **FFMPEG** | [here](https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest) |
-| **WEBP** | [here](https://github.com/clhuang/heroku-buildpack-webp-binaries.git) |
-| **IMAGEMAGICK** | [here](https://github.com/DuckyTeam/heroku-buildpack-imagemagick) |
+## Requirements
+
+- Node.js v18+
+- PostgreSQL Database
+- FFmpeg
+- ImageMagick
+- LibWebP
 
 ---
-## For Windows/VPS/RDP User
-* Download And Install Git [`Click Here`](https://git-scm.com/downloads)
-* Download And Install NodeJS [`Click Here`](https://nodejs.org/en/download)
-* Download And Install FFmpeg [`Click Here`](https://ffmpeg.org/download.html) (**Don't Forget Add FFmpeg to PATH enviroment variables**)
-* Download And Install ImageMagick [`Click Here`](https://imagemagick.org/script/download.php)
+
+## Quick Start
+
+### 1. Clone Repository
 
 ```bash
-git clone https://github.com/nazedev/hitori
-cd hitori
-npm install
-npm update
+git clone https://github.com/nazedev/naze-bot
+cd naze-bot
 ```
----
-## For Termux/Ubuntu/SSH User
+
+### 2. Install Dependencies
+
 ```bash
-pkg update && pkg upgrade
-pkg install git
-pkg install nodejs
-pkg install ffmpeg
-pkg install imagemagick
-git clone https://github.com/nazedev/hitori
-cd hitori
 npm install
 ```
 
-[ RECOMMENDED INSTALL ON TERMUX ]
+### 3. Setup Environment
+
 ```bash
-pkg install yarn
-yarn
+cp .env.example .env
+```
+
+Edit `.env` dengan konfigurasi kamu:
+
+```env
+DATABASE_URL=postgresql://user:password@host:5432/database
+BOT_NUMBER=62xxxxxxxxxx
+OWNER_NUMBER=62xxxxxxxxxx
+```
+
+### 4. Setup Database
+
+```bash
+npx prisma generate
+npx prisma db push
+```
+
+### 5. Run Bot
+
+```bash
+npm start
 ```
 
 ---
 
-## Run
+## Deployment Guides
+
+### Railway
+
+1. Fork repository ini
+2. Buat project baru di Railway
+3. Connect dengan GitHub repo
+4. Tambahkan PostgreSQL addon
+5. Set environment variables:
+   - `DATABASE_URL` (otomatis dari PostgreSQL addon)
+   - `BOT_NUMBER`
+   - `OWNER_NUMBER`
+6. Deploy!
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/nazebot)
+
+### Replit
+
+1. Fork repository ke Replit
+2. Buat PostgreSQL database (atau gunakan external)
+3. Set Secrets:
+   - `DATABASE_URL`
+   - `BOT_NUMBER`
+   - `OWNER_NUMBER`
+4. Run!
+
+### Pterodactyl
+
+1. Import egg dari `egg-naze-bot.json`
+2. Buat server baru dengan egg tersebut
+3. Set environment variables
+4. Start server
+
+### VPS / Ubuntu / Debian
+
 ```bash
-node .
+# Install dependencies
+sudo apt update && sudo apt install -y nodejs npm ffmpeg imagemagick webp
+
+# Clone dan install
+git clone https://github.com/nazedev/naze-bot
+cd naze-bot
+npm install
+
+# Setup
+cp .env.example .env
+nano .env  # Edit konfigurasi
+
+# Database
+npx prisma generate
+npx prisma db push
+
+# Run dengan PM2
+npm install -g pm2
+pm2 start npm --name "naze-bot" -- start
+pm2 save
+pm2 startup
 ```
+
+### Termux
+
+```bash
+# Install packages
+pkg update && pkg upgrade -y
+pkg install -y git nodejs ffmpeg imagemagick
+
+# Clone dan install
+git clone https://github.com/nazedev/naze-bot
+cd naze-bot
+npm install
+
+# Setup
+cp .env.example .env
+nano .env  # Edit konfigurasi
+
+# Database
+npx prisma generate
+npx prisma db push
+
+# Run
+npm start
+```
+
+### Docker
+
+```bash
+# Build dan run
+docker-compose up -d
+
+# Lihat logs
+docker-compose logs -f bot
+```
+
 ---
 
-### Connection Options
-- Support Qr Code
-- Support Pairing Code
+## Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `DATABASE_URL` | PostgreSQL connection string | ✅ |
+| `BOT_NUMBER` | Nomor WhatsApp bot (tanpa +) | ❌ |
+| `OWNER_NUMBER` | Nomor owner (pisahkan dengan koma) | ❌ |
+| `AUTHOR_NAME` | Nama author untuk stiker | ❌ |
+| `BOT_NAME` | Nama bot | ❌ |
+| `PACK_NAME` | Pack name untuk stiker | ❌ |
+| `PAIRING_CODE` | Gunakan pairing code (true/false) | ❌ |
+
 ---
 
-### Features
-| Menu     | Bot | Group | Search | Download | Tools | Ai | Game | Fun | Owner |
-| -------- | --- | ----- | ------ | -------- | ----- | -- | ---- | --- | ----- |
-| Work     |  ✅  |   ✅   |    ✅    |     ✅     |   ✅   | ✅ |   ✅   |  ✅  |    ✅    |
+## Connection Options
 
+Bot mendukung 2 cara koneksi:
 
-License: [MIT](https://choosealicense.com/licenses/mit/)
+### 1. QR Code (Default)
+```bash
+npm start
+```
+Scan QR Code yang muncul di terminal.
 
-#### Support Me
-- [Saweria](https://saweria.co/naze)
+### 2. Pairing Code
+```bash
+npm start --pairing-code
+```
+Masukkan nomor WhatsApp, lalu input pairing code yang muncul.
 
-## Thanks to
+---
 
-| [![Nazedev](https://github.com/nazedev.png?size=100)](https://github.com/nazedev) | [![Zaynn](https://github.com/ZaynRcK.png?size=100)](https://github.com/ZaynRcK) | [![Dani](https://github.com/nazedev.png?size=100)](https://github.com/nazedev) | [![WhiskeySockets](https://github.com/WhiskeySockets.png?size=100)](https://github.com/WhiskeySockets) |
-| --- | --- | --- | --- |
-| [NazeDev](https://github.com/nazedev) | [Zaynn](https://github.com/ZaynRcK) | [Dani](https://github.com/dani) | [WhiskeySockets](https://github.com/WhiskeySockets) |
+## Project Structure
+
+```
+naze-bot/
+├── src/
+│   ├── database.js    # Database module (Prisma)
+│   ├── message.js     # Message handler
+│   ├── server.js      # Express server
+│   ├── antispam.js    # Anti-spam module
+│   └── jadibot.js     # Multi-session module
+├── lib/
+│   ├── function.js    # Utility functions
+│   ├── converter.js   # Audio/video converter
+│   ├── exif.js        # Stiker exif handler
+│   ├── game.js        # Game functions
+│   ├── screaper.js    # Scrapers
+│   └── uploader.js    # File uploaders
+├── prisma/
+│   └── schema.prisma  # Prisma schema
+├── index.js           # Main entry point
+├── naze.js            # Command handler
+├── settings.js        # Global settings
+└── package.json
+```
+
+---
+
+## Contributing
+
+1. Fork repository
+2. Buat branch baru (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push ke branch (`git push origin feature/AmazingFeature`)
+5. Buat Pull Request
+
+---
+
+## Credits
+
+- [@whiskeysockets/baileys](https://github.com/WhiskeySockets/Baileys) - WhatsApp Web API
+- [Prisma](https://www.prisma.io/) - Database ORM
+- [Nazedev](https://github.com/nazedev) - Original creator
+
+---
+
+## License
+
+[MIT License](LICENSE)
+
+---
+
+## Support
+
+- WhatsApp Group: [Join](https://chat.whatsapp.com/B5qJIwZHm4VEYZJQE6iMwy)
+- GitHub Issues: [Report Bug](https://github.com/nazedev/naze-bot/issues)
+- Saweria: [Donate](https://saweria.co/naze)

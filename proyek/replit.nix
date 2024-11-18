@@ -1,6 +1,6 @@
 { pkgs }: {
     deps = [
-        pkgs.nodejs
+        pkgs.nodejs-20_x
         pkgs.nodePackages.typescript
         pkgs.ffmpeg
         pkgs.imagemagick
@@ -11,10 +11,13 @@
         pkgs.wget
         pkgs.yarn
         pkgs.libuuid
+        pkgs.openssl
+        pkgs.postgresql
     ];
     env = {
         LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
             pkgs.libuuid
+            pkgs.openssl
         ];
     };
-}
+}

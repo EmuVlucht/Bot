@@ -1,0 +1,142 @@
+{
+  "_comment": "Pterodactyl Egg for Naze Bot",
+  "meta": {
+    "version": "PTDL_v2",
+    "update_url": null
+  },
+  "exported_at": "2024-01-01T00:00:00+00:00",
+  "name": "Naze Bot",
+  "author": "nazedev@example.com",
+  "description": "WhatsApp Bot with @whiskeysockets/baileys and PostgreSQL",
+  "features": null,
+  "docker_images": {
+    "node:20-alpine": "ghcr.io/parkervcp/yolks:nodejs_20"
+  },
+  "file_denylist": [],
+  "startup": "if [[ -d .git ]] && [[ {{AUTO_UPDATE}} == \"1\" ]]; then git pull; fi; if [[ ! -z ${NODE_PACKAGES} ]]; then npm install ${NODE_PACKAGES}; fi; if [[ ! -z ${UNNODE_PACKAGES} ]]; then npm uninstall ${UNNODE_PACKAGES}; fi; if [ -f /home/container/package.json ]; then npm install --production; npx prisma generate; fi; /usr/local/bin/node /home/container/{{JS_FILE}}",
+  "config": {
+    "files": "{}",
+    "startup": "{\r\n    \"done\": \"Connected to\"\r\n}",
+    "logs": "{}",
+    "stop": "^C"
+  },
+  "scripts": {
+    "installation": {
+      "script": "#!/bin/bash\r\napt update\r\napt install -y git ffmpeg imagemagick webp curl jq\r\n\r\nif [ \"${USER_UPLOAD}\" == \"true\" ] || [ \"${USER_UPLOAD}\" == \"1\" ]; then\r\n    echo \"User upload enabled, skipping git clone\"\r\nelse\r\n    if [ ! -z \"${GIT_ADDRESS}\" ]; then\r\n        if [ ! -z \"${USERNAME}\" ] && [ ! -z \"${ACCESS_TOKEN}\" ]; then\r\n            git clone --depth=1 https://${USERNAME}:${ACCESS_TOKEN}@${GIT_ADDRESS} /mnt/server\r\n        else\r\n            git clone --depth=1 https://${GIT_ADDRESS} /mnt/server\r\n        fi\r\n    fi\r\nfi\r\n\r\ncd /mnt/server\r\nnpm install --production\r\nnpx prisma generate\r\n\r\necho \"Installation complete\"",
+      "container": "ghcr.io/parkervcp/installers:debian",
+      "entrypoint": "bash"
+    }
+  },
+  "variables": [
+    {
+      "name": "Git Repository",
+      "description": "Git repository URL (without https://)",
+      "env_variable": "GIT_ADDRESS",
+      "default_value": "github.com/nazedev/naze-bot",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Auto Update",
+      "description": "Automatically update on restart",
+      "env_variable": "AUTO_UPDATE",
+      "default_value": "0",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|boolean",
+      "field_type": "text"
+    },
+    {
+      "name": "Main File",
+      "description": "Main JavaScript file to run",
+      "env_variable": "JS_FILE",
+      "default_value": "index.js",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Database URL",
+      "description": "PostgreSQL connection string",
+      "env_variable": "DATABASE_URL",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Bot Number",
+      "description": "WhatsApp number for the bot (without +)",
+      "env_variable": "BOT_NUMBER",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Owner Number",
+      "description": "Owner WhatsApp number (comma separated)",
+      "env_variable": "OWNER_NUMBER",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Additional Packages",
+      "description": "Additional npm packages to install",
+      "env_variable": "NODE_PACKAGES",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Uninstall Packages",
+      "description": "NPM packages to uninstall",
+      "env_variable": "UNNODE_PACKAGES",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Git Username",
+      "description": "Username for private git repository",
+      "env_variable": "USERNAME",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Git Access Token",
+      "description": "Access token for private git repository",
+      "env_variable": "ACCESS_TOKEN",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string",
+      "field_type": "text"
+    },
+    {
+      "name": "User Upload",
+      "description": "Skip git clone if using user upload",
+      "env_variable": "USER_UPLOAD",
+      "default_value": "0",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|boolean",
+      "field_type": "text"
+    }
+  ]
+}

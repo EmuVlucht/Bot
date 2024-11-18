@@ -1,1 +1,1 @@
-worker: npm i && npm start
+web: npx prisma generate && npm start

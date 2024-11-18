@@ -6,7 +6,7 @@ const { Boom } = require('@hapi/boom');
 const NodeCache = require('node-cache');
 const { exec, spawn, execSync } = require('child_process');
 const { parsePhoneNumber } = require('awesome-phonenumber');
-const { default: WAConnection, useMultiFileAuthState, Browsers, DisconnectReason, makeInMemoryStore, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, proto, getAggregateVotesInPollMessage } = require('baileys');
+const { default: WAConnection, useMultiFileAuthState, Browsers, DisconnectReason, makeInMemoryStore, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, proto, getAggregateVotesInPollMessage } = require('@whiskeysockets/baileys');
 
 const { GroupCacheUpdate, GroupParticipantsUpdate, MessagesUpsert, Solving } = require('./message');
 

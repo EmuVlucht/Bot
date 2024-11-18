@@ -458,6 +458,63 @@ async function loadStore() {
     };
 }
 
+const cmdAdd = (command, db) => {
+    if (!db.cmd) db.cmd = {};
+    if (!db.cmd[command]) db.cmd[command] = { count: 0 };
+    db.cmd[command].count++;
+};
+
+const cmdDel = (command, db) => {
+    if (db.cmd && db.cmd[command]) {
+        delete db.cmd[command];
+    }
+};
+
+const cmdAddHit = async (command) => {
+    await HitDB.addCommand(command);
+};
+
+const addExpired = (jid, duration, list) => {
+    const toMs = require('ms');
+    const expired = Date.now() + toMs(duration);
+    const existing = list.find(p => p.jid === jid);
+    if (existing) {
+        existing.expired = existing.expired + toMs(duration);
+    } else {
+        list.push({ jid, expired });
+    }
+    return list;
+};
+
+const getPosition = (jid, list) => {
+    return list.findIndex(p => p.jid === jid);
+};
+
+const getExpired = (jid, list) => {
+    const item = list.find(p => p.jid === jid);
+    return item ? item.expired : 0;
+};
+
+const getStatus = (jid, list) => {
+    const item = list.find(p => p.jid === jid);
+    if (!item) return false;
+    return item.expired > Date.now();
+};
+
+const checkStatus = (jid, list) => {
+    if (!list || !Array.isArray(list)) return false;
+    const item = list.find(p => p.jid === jid);
+    return item && item.expired > Date.now();
+};
+
+const getAllExpired = (list) => {
+    return list.filter(p => p.expired < Date.now());
+};
+
+const checkExpired = (list) => {
+    return list.filter(p => p.expired > Date.now());
+};
+
 module.exports = {
     prisma,
     UserDB,
@@ -473,5 +530,15 @@ module.exports = {
     MessageDB,
     AuthSessionDB,
     loadDatabase,
-    loadStore
+    loadStore,
+    cmdAdd,
+    cmdDel,
+    cmdAddHit,
+    addExpired,
+    getPosition,
+    getExpired,
+    getStatus,
+    checkStatus,
+    getAllExpired,
+    checkExpired
 };

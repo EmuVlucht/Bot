@@ -1,4 +1,4 @@
-const { URL_REGEX } = require('baileys');
+const { URL_REGEX } = require('@whiskeysockets/baileys');
 const { Pixiv } = require ( '@ibaraki-douji/pixivts');
 const pixiv = new Pixiv();
 
