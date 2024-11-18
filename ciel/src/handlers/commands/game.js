@@ -7,6 +7,7 @@ const {
     updateActiveGame, 
     deleteActiveGame 
 } = require('../../services/database');
+const { genMath, modes } = require('../../../lib/math');
 
 const tictactoe = async (conn, m, { args, text, user }) => {
     if (!m.isGroup) return m.reply(settings.messages.group);
@@ -478,6 +479,72 @@ Saldo: ${user.money + profit}`);
 
 const suit = rps;
 
+const math = async (conn, m, { args, user }) => {
+    const mode = args[0]?.toLowerCase() || 'easy';
+    const validModes = Object.keys(modes);
+    
+    if (!validModes.includes(mode)) {
+        return m.reply(`*🧮 Mode tidak valid!*\n\nMode tersedia:\n${validModes.join(', ')}\n\nContoh: .math easy`);
+    }
+    
+    const existingGame = await getActiveGame(m.chat || m.sender, 'math');
+    if (existingGame) {
+        return m.reply('Masih ada soal matematika yang belum dijawab!\nJawab dulu atau tunggu timeout.');
+    }
+    
+    try {
+        const question = await genMath(mode);
+        
+        const gameData = {
+            soal: question.soal,
+            jawaban: question.jawaban,
+            mode: question.mode,
+            hadiah: question.hadiah,
+            timestamp: Date.now()
+        };
+        
+        const timeoutMinutes = Math.ceil(question.waktu / 60000);
+        await createActiveGame(m.chat || m.sender, 'math', gameData, [m.sender], timeoutMinutes);
+        
+        m.reply(`*🧮 Math Game*
+
+*Mode:* ${mode}
+*Soal:* ${question.soal} = ?
+*Hadiah:* ${question.hadiah} uang
+*Waktu:* ${question.waktu / 1000} detik
+
+Ketik jawaban angka untuk menjawab!`);
+    } catch (e) {
+        console.error('Math game error:', e);
+        m.reply('Gagal membuat soal matematika!');
+    }
+};
+
+const matematik = math;
+const matematika = math;
+
+const mathanswer = async (conn, m, { user }) => {
+    const answer = parseInt(m.text);
+    if (isNaN(answer)) return;
+    
+    const game = await getActiveGame(m.chat || m.sender, 'math');
+    if (!game) return;
+    
+    const gameData = game.gameData;
+    
+    if (answer === gameData.jawaban) {
+        await deleteActiveGame(m.chat || m.sender, 'math');
+        await updateUser(m.sender, { money: { increment: gameData.hadiah } });
+        
+        m.reply(`*🎉 Benar!*
+
+*Jawaban:* ${gameData.jawaban}
+*Hadiah:* +${gameData.hadiah} uang
+
+Selamat @${m.sender.split('@')[0]}!`, { mentions: [m.sender] });
+    }
+};
+
 module.exports = {
     tictactoe,
     ttt,
@@ -501,5 +568,9 @@ module.exports = {
     cf,
     dice,
     rps,
-    suit
+    suit,
+    math,
+    matematik,
+    matematika,
+    mathanswer
 };

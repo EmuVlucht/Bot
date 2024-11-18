@@ -1,5 +1,7 @@
 const axios = require('axios');
 const settings = require('../../../config/settings');
+const { tmate } = require('../../../lib/tmate');
+const SavetikAPI = require('../../../lib/tikSnap');
 
 const tiktok = async (conn, m, { text }) => {
     if (!text) return m.reply('Masukkan link TikTok!\nContoh: .tiktok https://vt.tiktok.com/xxx');
@@ -17,7 +19,7 @@ const tiktok = async (conn, m, { text }) => {
         });
         
         if (!response.data.data) {
-            return m.reply('Video tidak ditemukan!');
+            throw new Error('API utama gagal');
         }
         
         const data = response.data.data;
@@ -31,8 +33,29 @@ const tiktok = async (conn, m, { text }) => {
         }, { quoted: m });
         
     } catch (e) {
-        console.error('TikTok error:', e);
-        m.reply('Gagal download video TikTok! Coba lagi nanti.');
+        console.log('TikTok API utama gagal, mencoba fallback...');
+        try {
+            const result = await tmate.download(text);
+            if (!result || !result.downloadLinks?.length) {
+                throw new Error('Tmate gagal');
+            }
+            
+            const videoLink = result.downloadLinks.find(l => 
+                l.linkText?.includes('Without Watermark') || l.linkText?.includes('HD')
+            ) || result.downloadLinks[0];
+            
+            if (!videoLink?.link) throw new Error('Tidak ada link download');
+            
+            const videoBuffer = await axios.get(videoLink.link, { responseType: 'arraybuffer' });
+            
+            await conn.sendMessage(m.chat, {
+                video: Buffer.from(videoBuffer.data),
+                caption: `*📱 TikTok Download*\n\n*Title:* ${result.title || 'Unknown'}\n*Username:* ${result.username || 'Unknown'}`
+            }, { quoted: m });
+        } catch (e2) {
+            console.error('TikTok fallback error:', e2);
+            m.reply('Gagal download video TikTok! Coba lagi nanti.');
+        }
     }
 };
 
@@ -328,6 +351,62 @@ const mediafire = async (conn, m, { text }) => {
 
 const mf = mediafire;
 
+const douyin = async (conn, m, { text }) => {
+    if (!text) return m.reply('Masukkan link Douyin!\nContoh: .douyin https://v.douyin.com/xxx');
+    
+    if (!text.includes('douyin.com')) {
+        return m.reply('Link tidak valid! Harus link Douyin.');
+    }
+    
+    const urlPattern = /^https?:\/\/(www\.)?(v\.)?douyin\.com\/.+$/i;
+    if (!urlPattern.test(text.trim())) {
+        return m.reply('Link tidak valid! Harus link Douyin yang benar.');
+    }
+    
+    await m.reply(settings.messages.wait);
+    
+    try {
+        const savetik = new SavetikAPI();
+        const result = await savetik.download({ url: text });
+        
+        if (!result || result.status !== 'ok' || !result.downloadLinks?.length) {
+            throw new Error('SavetikAPI gagal');
+        }
+        
+        const videoLink = result.downloadLinks.find(l => 
+            l.text?.includes('Without Watermark') || l.text?.includes('HD')
+        ) || result.downloadLinks[0];
+        
+        if (!videoLink?.link) throw new Error('Tidak ada link download');
+        
+        const downloadUrl = videoLink.link;
+        if (!downloadUrl.startsWith('http')) {
+            throw new Error('URL download tidak valid');
+        }
+        
+        const videoBuffer = await axios.get(downloadUrl, { 
+            responseType: 'arraybuffer',
+            timeout: 60000
+        });
+        
+        const contentType = videoBuffer.headers?.['content-type'] || '';
+        if (!contentType.includes('video') && !contentType.includes('octet-stream')) {
+            throw new Error('Response bukan video');
+        }
+        
+        await conn.sendMessage(m.chat, {
+            video: Buffer.from(videoBuffer.data),
+            caption: `*📱 Douyin Download*\n\n*Title:* ${result.videoTitle || 'Unknown'}`
+        }, { quoted: m });
+        
+    } catch (e) {
+        console.error('Douyin error:', e);
+        m.reply('Gagal download video Douyin! Coba lagi nanti.');
+    }
+};
+
+const dy = douyin;
+
 module.exports = {
     tiktok,
     tt,
@@ -352,5 +431,7 @@ module.exports = {
     pinterest,
     pin,
     mediafire,
-    mf
+    mf,
+    douyin,
+    dy
 };

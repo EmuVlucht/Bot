@@ -2,6 +2,10 @@ const axios = require('axios');
 const settings = require('../../../config/settings');
 const { createSticker, webpToImage } = require('../../../lib/exif');
 const { toAudio, toPTT, resizeImage, compressImage } = require('../../../lib/converter');
+const { tts, ttsGoogle } = require('../../../lib/tts');
+const { TelegraPh, UguuSe, Catbox } = require('../../../lib/uploader');
+const { styletext, remini } = require('../../../lib/scraper');
+const { nulisBuku, nulisFolio } = require('../../../lib/nulis');
 
 const sticker = async (conn, m, { args, text, isOwner, botSettings }) => {
     const quoted = m.quoted || m;
@@ -362,6 +366,168 @@ const weather = async (conn, m, { text }) => {
 
 const cuaca = weather;
 
+const say2 = async (conn, m, { text }) => {
+    if (!text) return m.reply('Masukkan teks yang akan diubah ke audio!\nContoh: .tts halo dunia\nContoh dengan bahasa: .tts en hello world');
+    
+    const validLangs = ['id', 'en', 'ja', 'ko', 'zh', 'es', 'fr', 'de', 'ar', 'hi', 'pt', 'ru', 'it', 'th', 'vi', 'ms'];
+    const parts = text.split(' ');
+    const firstWord = parts[0]?.toLowerCase();
+    
+    let lang = 'id';
+    let teksToSay = text;
+    
+    if (firstWord?.length === 2 && validLangs.includes(firstWord)) {
+        lang = firstWord;
+        teksToSay = parts.slice(1).join(' ');
+    }
+    
+    if (!teksToSay || !teksToSay.trim()) {
+        return m.reply('Masukkan teks yang akan diubah ke audio!');
+    }
+    
+    await m.reply(settings.messages.wait);
+    
+    try {
+        const audioBuffer = await ttsGoogle(teksToSay.trim(), lang);
+        
+        await conn.sendMessage(m.chat, {
+            audio: audioBuffer,
+            mimetype: 'audio/mpeg',
+            ptt: true
+        }, { quoted: m });
+    } catch (e) {
+        console.error('TTS error:', e);
+        m.reply('Gagal membuat audio! Coba lagi nanti.');
+    }
+};
+
+const texttospeech = say2;
+
+const upload = async (conn, m, {}) => {
+    const quoted = m.quoted || m;
+    
+    if (!quoted.isMedia) {
+        return m.reply('Reply gambar/video/dokumen untuk diupload!');
+    }
+    
+    await m.reply(settings.messages.wait);
+    
+    try {
+        const buffer = await quoted.download();
+        
+        let url;
+        try {
+            url = await TelegraPh(buffer);
+        } catch (e) {
+            try {
+                const result = await UguuSe(buffer);
+                url = result.url || result;
+            } catch (e2) {
+                url = await Catbox(buffer);
+            }
+        }
+        
+        m.reply(`*📤 Upload Berhasil!*\n\n*URL:* ${url}\n\n_Link akan expired sesuai kebijakan hosting._`);
+    } catch (e) {
+        console.error('Upload error:', e);
+        m.reply('Gagal upload file!');
+    }
+};
+
+const tourl = upload;
+
+const styletxt = async (conn, m, { text }) => {
+    if (!text) return m.reply('Masukkan teks untuk diubah stylenya!\nContoh: .styletext hello');
+    
+    await m.reply(settings.messages.wait);
+    
+    try {
+        const result = await styletext(text);
+        
+        if (!result || !result.length) {
+            return m.reply('Gagal mengubah style teks!');
+        }
+        
+        let msg = `*✨ StyleText*\n\n*Teks:* ${text}\n\n`;
+        result.slice(0, 15).forEach((item, i) => {
+            if (item.name && item.result) {
+                msg += `*${i + 1}. ${item.name}*\n${item.result}\n\n`;
+            }
+        });
+        
+        m.reply(msg);
+    } catch (e) {
+        console.error('StyleText error:', e);
+        m.reply('Gagal mengubah style teks!');
+    }
+};
+
+const styletext2 = styletxt;
+
+const hd = async (conn, m, {}) => {
+    const quoted = m.quoted || m;
+    
+    if (!quoted.isImage) {
+        return m.reply('Reply gambar untuk ditingkatkan kualitasnya!');
+    }
+    
+    await m.reply(settings.messages.wait);
+    
+    try {
+        const buffer = await quoted.download();
+        const result = await remini(buffer, 'enhance');
+        
+        await conn.sendMessage(m.chat, {
+            image: Buffer.from(result),
+            caption: '*✨ HD Enhance Berhasil!*'
+        }, { quoted: m });
+    } catch (e) {
+        console.error('HD error:', e);
+        m.reply('Gagal meningkatkan kualitas gambar!');
+    }
+};
+
+const enhance = hd;
+const remini2 = hd;
+
+const nulis = async (conn, m, { text }) => {
+    if (!text) return m.reply('Masukkan teks untuk ditulis!\nContoh: .nulis Halo dunia ini adalah contoh tulisan tangan');
+    
+    await m.reply(settings.messages.wait);
+    
+    try {
+        const buffer = await nulisBuku(text, 'kiri');
+        
+        await conn.sendMessage(m.chat, {
+            image: buffer,
+            caption: '*✍️ Nulis Berhasil!*'
+        }, { quoted: m });
+    } catch (e) {
+        console.error('Nulis error:', e);
+        m.reply('Gagal membuat tulisan!');
+    }
+};
+
+const tulis = nulis;
+
+const nulisfolio = async (conn, m, { text }) => {
+    if (!text) return m.reply('Masukkan teks untuk ditulis!\nContoh: .nulisfolio Halo dunia ini adalah contoh tulisan di folio');
+    
+    await m.reply(settings.messages.wait);
+    
+    try {
+        const buffer = await nulisFolio(text, 'kiri');
+        
+        await conn.sendMessage(m.chat, {
+            image: buffer,
+            caption: '*✍️ Nulis Folio Berhasil!*'
+        }, { quoted: m });
+    } catch (e) {
+        console.error('Nulis folio error:', e);
+        m.reply('Gagal membuat tulisan!');
+    }
+};
+
 module.exports = {
     sticker,
     s,
@@ -391,5 +557,17 @@ module.exports = {
     runtime,
     uptime,
     weather,
-    cuaca
+    cuaca,
+    tts: say2,
+    texttospeech,
+    upload,
+    tourl,
+    styletext: styletxt,
+    styletxt,
+    hd,
+    enhance,
+    remini: remini2,
+    nulis,
+    tulis,
+    nulisfolio
 };

@@ -1,5 +1,6 @@
 const axios = require('axios');
 const settings = require('../../../config/settings');
+const { wallpaper, quotesAnime, tiktokStalk, instaStalk, ringtone } = require('../../../lib/scraper');
 
 const say = async (conn, m, { text }) => {
     if (!text) return m.reply('Masukkan teks!');
@@ -392,6 +393,115 @@ const rate = async (conn, m, { text }) => {
     m.reply(`*📊 Rate*\n\n${text}\n\n${stars}\n${rating}/10`);
 };
 
+const wp = async (conn, m, { text }) => {
+    if (!text) return m.reply('Masukkan keyword pencarian!\nContoh: .wallpaper anime');
+    
+    await m.reply(settings.messages.wait);
+    
+    try {
+        const result = await wallpaper(text);
+        
+        if (!result || !result.length) {
+            return m.reply('Wallpaper tidak ditemukan!');
+        }
+        
+        const randomWp = result[Math.floor(Math.random() * Math.min(result.length, 5))];
+        const imageUrl = randomWp.image?.[0] || randomWp.image;
+        
+        if (!imageUrl) {
+            return m.reply('Wallpaper tidak ditemukan!');
+        }
+        
+        const imageBuffer = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+        
+        await conn.sendMessage(m.chat, {
+            image: Buffer.from(imageBuffer.data),
+            caption: `*🖼️ Wallpaper*\n\n*Title:* ${randomWp.title || 'Unknown'}`
+        }, { quoted: m });
+    } catch (e) {
+        console.error('Wallpaper error:', e);
+        m.reply('Gagal mencari wallpaper!');
+    }
+};
+
+const animequote = async (conn, m, {}) => {
+    await m.reply(settings.messages.wait);
+    
+    try {
+        const result = await quotesAnime();
+        
+        if (!result) {
+            return m.reply('Gagal mendapatkan quote anime!');
+        }
+        
+        m.reply(`*🎌 Anime Quote*\n\n"${result.content}"\n\n— ${result.character?.name || 'Unknown'}\n*Anime:* ${result.anime?.name || 'Unknown'}`);
+    } catch (e) {
+        console.error('Anime quote error:', e);
+        m.reply('Gagal mendapatkan quote anime!');
+    }
+};
+
+const quoteanime = animequote;
+
+const ttstalk = async (conn, m, { text }) => {
+    if (!text) return m.reply('Masukkan username TikTok!\nContoh: .ttstalk username');
+    
+    await m.reply(settings.messages.wait);
+    
+    try {
+        const result = await tiktokStalk(text.replace('@', ''));
+        
+        if (!result) {
+            return m.reply('User tidak ditemukan!');
+        }
+        
+        m.reply(`*📊 TikTok Stalk*
+
+*Username:* ${result.author_name || result.username || 'Unknown'}
+*Nickname:* ${result.nickname || '-'}
+*Followers:* ${result.followerCount || 0}
+*Following:* ${result.followingCount || 0}
+*Likes:* ${result.heartCount || 0}
+*Videos:* ${result.videoCount || 0}
+
+*Bio:* ${result.signature || '-'}`);
+    } catch (e) {
+        console.error('TikTok stalk error:', e);
+        m.reply('Gagal stalking user TikTok!');
+    }
+};
+
+const tikstalk = ttstalk;
+
+const igstalk = async (conn, m, { text }) => {
+    if (!text) return m.reply('Masukkan username Instagram!\nContoh: .igstalk username');
+    
+    await m.reply(settings.messages.wait);
+    
+    try {
+        const result = await instaStalk(text.replace('@', ''));
+        
+        if (!result) {
+            return m.reply('User tidak ditemukan!');
+        }
+        
+        m.reply(`*📊 Instagram Stalk*
+
+*Username:* ${result.username || 'Unknown'}
+*Nickname:* ${result.nickname || '-'}
+*Followers:* ${result.followers || 0}
+*Following:* ${result.following || 0}
+*Posts:* ${result.posts || 0}
+
+*Bio:* ${result.description || '-'}`);
+    } catch (e) {
+        console.error('Instagram stalk error:', e);
+        m.reply('Gagal stalking user Instagram!');
+    }
+};
+
+const instastalk = igstalk;
+
 module.exports = {
     say,
     simisimi,
@@ -421,5 +531,13 @@ module.exports = {
     eightball,
     '8ball': eightball,
     ball,
-    rate
+    rate,
+    wallpaper: wp,
+    wp,
+    animequote,
+    quoteanime,
+    ttstalk,
+    tikstalk,
+    igstalk,
+    instastalk
 };
