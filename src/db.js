@@ -9,17 +9,16 @@ const isRailway = process.env.RAILWAY_ENVIRONMENT !== undefined;
 
 let poolConfig;
 
-const isRailwayHost = (host) => host && host.includes("railway.internal");
-const isRailwayUrl = (url) => url && url.includes("railway.internal");
-
-if (isRailway && process.env.DATABASE_URL && !isRailwayUrl(process.env.DATABASE_URL)) {
+if (process.env.DATABASE_URL) {
   poolConfig = {
     connectionString: process.env.DATABASE_URL,
-    ssl: {
-      rejectUnauthorized: false,
-    },
   };
-} else if (process.env.PGHOST && !isRailwayHost(process.env.PGHOST) && process.env.PGUSER && process.env.PGDATABASE) {
+  if (isProduction || isRailway) {
+    poolConfig.ssl = {
+      rejectUnauthorized: false,
+    };
+  }
+} else if (process.env.PGHOST && process.env.PGUSER && process.env.PGDATABASE) {
   poolConfig = {
     host: process.env.PGHOST,
     port: parseInt(process.env.PGPORT || "5432"),
@@ -27,24 +26,10 @@ if (isRailway && process.env.DATABASE_URL && !isRailwayUrl(process.env.DATABASE_
     password: process.env.PGPASSWORD,
     database: process.env.PGDATABASE,
   };
-} else if (process.env.DATABASE_URL && !isRailwayUrl(process.env.DATABASE_URL)) {
-  poolConfig = {
-    connectionString: process.env.DATABASE_URL,
-  };
-  if (isProduction) {
-    poolConfig.ssl = {
-      rejectUnauthorized: false,
-    };
-  }
 } else {
-  console.log("Note: Railway database URLs detected but not in Railway environment.");
-  console.log("Using local PostgreSQL connection on default port.");
-  poolConfig = {
-    host: "localhost",
-    port: 5432,
-    user: "runner",
-    database: "postgres",
-  };
+  throw new Error(
+    "Database configuration not found. Please set DATABASE_URL or PGHOST/PGUSER/PGDATABASE."
+  );
 }
 
 export const pool = new Pool(poolConfig);
