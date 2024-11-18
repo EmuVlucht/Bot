@@ -1,0 +1,63 @@
+Hai, Bisakah kamu Berbahasa Indonesia. Selalu Gunakan bahasa Indonesia ya!
+
+Bisakah kamu lanjutkan proyek saya tadi
+ini perintah saya tadi
+```
+Bisakah kamu membuat sebuah entitas baru bernama "Ciel" berupa bot WhatsApp canggih?
+
+Buat dari nol seluruh script di dalam folder ‘source-1’ dan 'source-2' tersebut, dengan menjaga agar semua tampilan, fitur, dan fungsi tetap sama.
+
+buatlah seratus persen pakai database ini
+``
+postgresql://postgres:VSktFuvpEIgHCnIDpNnXXnCSZlotLNUI@shinkansen.proxy.rlwy.net:22870/railway
+``
+pakai ini @whiskeysockets/baileys 
+dengan padukan Di Prisma sebagai ORM
+
+Buatlah hingga bisa di deploy dan di hosting di 4 tempat ini
+1. railway
+2. replit
+3. panel pterodactyl
+4. Vps, termux, codespace
+buatlah agar bisa 100% di gunakan dan dideploy dan dihosting di 4 tempat itu tanpa error dan tanpa kendala (termasuk databasenya-databasenya).
+
+buatlah agar bisa di gunakan 100 persen tanpa kendala!
+```
+
+Dan ketika lagi pengerjaan. kamu error dua kali
+terakhir tadi kamu melakukan ini sebelum error
+
+waktu error pertama
+In progress tasks
+Set up project structure and files ✓
+Configure database and create schema ✓
+Connect bot, authenticate, show QR ✓
+Build database services for features ✓
+Handle and format messages ✓
+Add owner and admin commands ✓
+Add useful helper functions (langsung kamu error disini)
+Implement group management features
+Add video and music downloader
+Implement fun game features
+Create stickers and AI chat
+Prepare files for deployment
+Test and finalize bot
+Error ketika melakukan:
+```
+Restarted Ciel Bot
+```
+
+waktu error kedua
+In progress tasks
+Add talking text feature from source ✓
+Add file upload feature from source ✓
+Add TikTok alternative feature from source ✓
+=> Add Douyin video handling feature (langsung kamu error disini)
+=> Add writing feature with styles
+=> Add Pixiv, Math, Scraper features
+=> Update message handling and test bot
+Error ketika melakukan:
+```
+opened ciel/src/handlers/messageHandler.js
+opened ciel/src/handlers/commands/game.js
+```
