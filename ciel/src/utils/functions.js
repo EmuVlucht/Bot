@@ -5,7 +5,15 @@ const https = require('https');
 const crypto = require('crypto');
 const FileType = require('file-type');
 const moment = require('moment-timezone');
-const { sizeFormatter } = require('human-readable');
+
+const sizeFormatter = (options = {}) => {
+    const units = options.std === 'IEC' ? ['B', 'KiB', 'MiB', 'GiB', 'TiB'] : ['B', 'KB', 'MB', 'GB', 'TB'];
+    return (bytes) => {
+        if (bytes === 0) return '0 B';
+        const i = Math.floor(Math.log(bytes) / Math.log(1024));
+        return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + units[i];
+    };
+};
 
 const unsafeAgent = new https.Agent({ rejectUnauthorized: false });
 
@@ -175,8 +183,12 @@ const limitText = (text, limit) => {
 };
 
 const isEmoji = (str) => {
-    const emojiRegex = /[\u{1F000}-\\u{1F6FF}\\u{1F900}-\\u{1F9FF}\u{2600}-\u{26FF}\\u{2700}-\\u{27BF}\\u{1F100}-\u{1F1FF}]/u;
-    return emojiRegex.test(str);
+    try {
+        const emojiRegex = /[\p{Emoji}]/u;
+        return emojiRegex.test(str);
+    } catch {
+        return false;
+    }
 };
 
 const formatNumber = (num) => {
