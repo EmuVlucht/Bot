@@ -28,6 +28,7 @@ import {
 } from "./utils.js";
 import { findAutoReply } from "./autoReply.js";
 import { getTemplate, getAvailableTemplates } from "./kirimTemplates.js";
+import { getCurrentPPStatus, forceChangePP } from "./profilePicture.js";
 
 export function setupMessageHandler(sock) {
   sock.ev.on("messages.upsert", async ({ messages, type }) => {
@@ -85,6 +86,11 @@ async function handleMessage(sock, msg) {
         return;
       }
       
+      if (text.startsWith(".pp")) {
+        await handlePP(sock, chatId, text);
+        return;
+      }
+      
       if (isGroup && text.startsWith(config.prefix)) {
         await handleCommand(sock, msg, chatId, sender, text, true);
       }
@@ -101,6 +107,11 @@ async function handleMessage(sock, msg) {
       
       if (text.startsWith(".kirim")) {
         await handleKirim(sock, chatId, text);
+        return;
+      }
+      
+      if (text.startsWith(".pp")) {
+        await handlePP(sock, chatId, text);
         return;
       }
     }
@@ -502,5 +513,52 @@ async function handleKirim(sock, chatId, text) {
   } catch (error) {
     console.error("Error handling kirim:", error);
     await sock.sendMessage(chatId, { text: "Gagal mengirim pesan." });
+  }
+}
+
+async function handlePP(sock, chatId, text) {
+  try {
+    const args = text.replace(".pp", "").trim().toLowerCase();
+    
+    if (!args || args === "status") {
+      const status = getCurrentPPStatus();
+      const statusText = `📷 *Status Profile Picture*\n\nPP Saat Ini: ${status.currentPP ? status.name : "Belum diset"}\nPP Seharusnya: ${status.name}\nFile: ${status.fileName}\nHari Libur: ${status.isLibur ? "Ya" : "Tidak"}\n\n*Jadwal Otomatis:*\n- PP Malam (A): 17:00 - 05:00 WIT\n- PP Siang (B): 05:00 - 12:00 & 13:00 - 17:00 WIT\n- PP Khusus (C): Jam 12, Weekend, Libur Nasional\n\n*Perintah:*\n.pp status - Lihat status\n.pp malam - Ganti ke PP Malam\n.pp siang - Ganti ke PP Siang\n.pp khusus - Ganti ke PP Khusus`;
+      
+      await sock.sendMessage(chatId, { text: statusText });
+      return;
+    }
+    
+    let ppType;
+    switch (args) {
+      case "malam":
+      case "a":
+        ppType = "A";
+        break;
+      case "siang":
+      case "b":
+        ppType = "B";
+        break;
+      case "khusus":
+      case "c":
+        ppType = "C";
+        break;
+      default:
+        await sock.sendMessage(chatId, {
+          text: "Tipe PP tidak valid.\n\nGunakan:\n.pp malam - PP Malam\n.pp siang - PP Siang\n.pp khusus - PP Khusus\n.pp status - Lihat status",
+        });
+        return;
+    }
+    
+    await sock.sendMessage(chatId, { text: `Mengubah PP ke ${args}...` });
+    
+    const result = await forceChangePP(sock, ppType);
+    
+    await sock.sendMessage(chatId, {
+      text: `✅ PP berhasil diganti!\n\nTipe: ${result.name}\nFile: ${result.fileName}`,
+    });
+    
+  } catch (error) {
+    console.error("Error handling PP command:", error);
+    await sock.sendMessage(chatId, { text: `Gagal mengganti PP: ${error.message}` });
   }
 }

@@ -10,6 +10,7 @@ import qrcode from "qrcode-terminal";
 import { setupMessageHandler } from "./bot.js";
 import { setupCronJobs } from "./cron.js";
 import { config } from "./config.js";
+import { setupProfilePictureChanger, stopProfilePictureChanger } from "./profilePicture.js";
 import { testConnection } from "./db.js";
 import { initDBAuthState } from "./sessionStore.js";
 import { startWebServer, updateQR, clearQR, setConnected, setDisconnected, setSocketInstance, clearPairingCode, updatePairingCode, setPairingCallback } from "./web.js";
@@ -134,6 +135,7 @@ async function connectToWhatsApp() {
       setDisconnected();
       clearQR();
       clearPairingCode();
+      stopProfilePictureChanger();
       
       const shouldReconnect =
         lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
@@ -179,6 +181,7 @@ async function connectToWhatsApp() {
 
       setupMessageHandler(sock);
       setupCronJobs(sock);
+      setupProfilePictureChanger(sock);
     }
   });
 
