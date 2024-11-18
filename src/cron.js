@@ -25,9 +25,9 @@ export function setupCronJobs(sock) {
 
   setInterval(async () => {
     await sendLoopMessages(sock);
-  }, 30 * 1000);
+  }, 1000);
 
-  console.log("Loop message checker set for every 30 seconds");
+  console.log("Loop message checker set for every 1 second");
 }
 
 async function sendDailyReport(sock) {
