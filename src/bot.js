@@ -6,6 +6,7 @@ import {
   getGroupData,
   isGroupInitialized,
   incrementCounter,
+  decrementCounter,
   rebaseData,
   saveLiveMessage,
   getLiveMessage,
@@ -13,6 +14,9 @@ import {
   createLoopMessage,
   stopLoopMessage,
   getLoopMessage,
+  trackMessage,
+  getTrackedMessage,
+  deleteTrackedMessage,
 } from "./storage.js";
 import {
   formatCheckpointData,
@@ -36,8 +40,15 @@ export function setupMessageHandler(sock) {
     for (const update of updates) {
       if (update.update?.messageStubType === 1) {
         const groupId = update.key.remoteJid;
+        const messageId = update.key.id;
         const isInit = await isGroupInitialized(groupId);
         if (isInit) {
+          const tracked = await getTrackedMessage(groupId, messageId);
+          if (tracked) {
+            await decrementCounter(groupId, tracked.messageType);
+            await deleteTrackedMessage(groupId, messageId);
+            console.log(`[DELETE] Decremented ${tracked.messageType} for deleted message ${messageId}`);
+          }
           await incrementCounter(groupId, "nullMsg");
         }
       }
@@ -176,40 +187,45 @@ async function countMessage(groupId, msg, content) {
     return;
   }
 
+  const messageId = msg.key.id;
+  let messageType = null;
+
   if (content.viewOnce || content.type === "viewOnce") {
-    await incrementCounter(groupId, "oneTime");
-    return;
+    messageType = "oneTime";
+  } else if (containsLink(content.text)) {
+    messageType = "link";
+  } else {
+    switch (content.type) {
+      case "text":
+        messageType = "text";
+        break;
+      case "audio":
+        if (content.viewOnce) {
+          messageType = "oneTime";
+        } else {
+          messageType = "audio";
+        }
+        break;
+      case "sticker":
+        messageType = "sticker";
+        break;
+      case "doc":
+        messageType = "doc";
+        break;
+      case "image":
+      case "video":
+      case "media":
+        messageType = "sw";
+        break;
+      default:
+        break;
+    }
   }
 
-  if (containsLink(content.text)) {
-    await incrementCounter(groupId, "link");
-    return;
-  }
-
-  switch (content.type) {
-    case "text":
-      await incrementCounter(groupId, "text");
-      break;
-    case "audio":
-      if (content.viewOnce) {
-        await incrementCounter(groupId, "oneTime");
-      } else {
-        await incrementCounter(groupId, "audio");
-      }
-      break;
-    case "sticker":
-      await incrementCounter(groupId, "sticker");
-      break;
-    case "doc":
-      await incrementCounter(groupId, "doc");
-      break;
-    case "image":
-    case "video":
-    case "media":
-      await incrementCounter(groupId, "sw");
-      break;
-    default:
-      break;
+  if (messageType) {
+    await incrementCounter(groupId, messageType);
+    await trackMessage(groupId, messageId, messageType);
+    console.log(`[COUNT] Tracked message ${messageId} as ${messageType}`);
   }
 }
 

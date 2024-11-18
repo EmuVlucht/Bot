@@ -1,5 +1,5 @@
 import { db } from "./db.js";
-import { groups, checkpointData, liveMessages, loopMessages } from "../shared/schema.js";
+import { groups, checkpointData, liveMessages, loopMessages, messageTracking } from "../shared/schema.js";
 import { eq, and, lte } from "drizzle-orm";
 
 export async function initGroup(groupId, groupName) {
@@ -275,5 +275,73 @@ export async function updateLoopMessageNextSend(id, intervalMs) {
     .set({ lastSent: now, nextSend })
     .where(eq(loopMessages.id, id));
   
+  return true;
+}
+
+export async function trackMessage(groupId, messageId, messageType) {
+  await db.insert(messageTracking).values({
+    groupId,
+    messageId,
+    messageType,
+  });
+  return true;
+}
+
+export async function getTrackedMessage(groupId, messageId) {
+  const result = await db
+    .select()
+    .from(messageTracking)
+    .where(and(eq(messageTracking.groupId, groupId), eq(messageTracking.messageId, messageId)));
+  
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function deleteTrackedMessage(groupId, messageId) {
+  await db
+    .delete(messageTracking)
+    .where(and(eq(messageTracking.groupId, groupId), eq(messageTracking.messageId, messageId)));
+  return true;
+}
+
+export async function decrementCounter(groupId, type) {
+  const data = await getGroupData(groupId);
+  if (!data) return false;
+
+  const updateObj = { updatedAt: new Date() };
+  
+  switch (type) {
+    case "sw":
+      updateObj.sw = Math.max(0, data.sw - 1);
+      break;
+    case "doc":
+      updateObj.doc = Math.max(0, data.doc - 1);
+      break;
+    case "text":
+      updateObj.text = Math.max(0, data.text - 1);
+      break;
+    case "audio":
+      updateObj.audio = Math.max(0, data.audio - 1);
+      break;
+    case "sticker":
+      updateObj.sticker = Math.max(0, data.sticker - 1);
+      break;
+    case "oneTime":
+      updateObj.oneTime = Math.max(0, data.oneTime - 1);
+      break;
+    case "link":
+      updateObj.link = Math.max(0, data.link - 1);
+      break;
+    case "nullMsg":
+      updateObj.nullMsg = Math.max(0, data.nullMsg - 1);
+      break;
+    default:
+      return false;
+  }
+
+  await db
+    .update(checkpointData)
+    .set(updateObj)
+    .where(eq(checkpointData.groupId, groupId));
+
   return true;
 }

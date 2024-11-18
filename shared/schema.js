@@ -50,3 +50,11 @@ export const loopMessages = pgTable("loop_messages", {
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const messageTracking = pgTable("message_tracking", {
+  id: serial("id").primaryKey(),
+  groupId: text("group_id").notNull(),
+  messageId: text("message_id").notNull(),
+  messageType: text("message_type").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
