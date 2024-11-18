@@ -443,3 +443,12 @@ export async function cancelScheduledMessage(id) {
   
   return true;
 }
+
+export async function markScheduledMessageFailed(id) {
+  await db
+    .update(scheduledMessages)
+    .set({ isActive: false, isCompleted: true })
+    .where(eq(scheduledMessages.id, id));
+  
+  return true;
+}

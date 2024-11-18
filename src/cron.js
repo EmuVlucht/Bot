@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import { config, formatOwnerJid } from "./config.js";
-import { getAllGroupsData, getAllActiveLiveMessages, getGroupData, stopLiveMessage, getDueLoopMessages, updateLoopMessageAfterSend } from "./storage.js";
+import { getAllGroupsData, getAllActiveLiveMessages, getGroupData, stopLiveMessage, getDueLoopMessages, updateLoopMessageAfterSend, getDueScheduledMessages, updateScheduledMessageAfterSend, markScheduledMessageFailed } from "./storage.js";
 import { formatAllGroupsData, formatCheckpointData } from "./utils.js";
 
 export function setupCronJobs(sock) {
@@ -28,6 +28,12 @@ export function setupCronJobs(sock) {
   }, 1000);
 
   console.log("Loop message checker set for every 1 second");
+
+  setInterval(async () => {
+    await sendScheduledMessages(sock);
+  }, 1000);
+
+  console.log("Scheduled message checker set for every 1 second");
 }
 
 async function sendDailyReport(sock) {
@@ -114,5 +120,53 @@ async function sendLoopMessages(sock) {
     }
   } catch (error) {
     console.error("Error processing loop messages:", error);
+  }
+}
+
+async function sendScheduledMessages(sock) {
+  try {
+    const dueMessages = await getDueScheduledMessages();
+    
+    for (const scheduleMsg of dueMessages) {
+      try {
+        const targetJid = `${scheduleMsg.targetNumber}@s.whatsapp.net`;
+        
+        await sock.sendMessage(targetJid, { text: scheduleMsg.message });
+        
+        const result = await updateScheduledMessageAfterSend(
+          scheduleMsg.id, 
+          scheduleMsg.sentCount, 
+          scheduleMsg.sendCount
+        );
+        
+        if (result.completed) {
+          console.log(`[JADWAL] Completed for ${scheduleMsg.targetNumber} (sent ${result.sentCount}/${scheduleMsg.sendCount})`);
+          
+          await sock.sendMessage(scheduleMsg.creatorChatId, {
+            text: `*Jadwal Selesai*\n\nPesan ke ${scheduleMsg.targetNumber} telah selesai dikirim.\nTotal: ${result.sentCount}x`,
+          });
+        } else {
+          console.log(`[JADWAL] Sent to ${scheduleMsg.targetNumber}, ${result.sentCount}/${scheduleMsg.sendCount}`);
+        }
+        
+        if (!result.completed && scheduleMsg.sendCount > 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      } catch (sendError) {
+        console.error(`Error sending scheduled message to ${scheduleMsg.targetNumber}:`, sendError);
+        
+        await markScheduledMessageFailed(scheduleMsg.id);
+        
+        try {
+          await sock.sendMessage(scheduleMsg.creatorChatId, {
+            text: `*Gagal Mengirim Jadwal*\n\nID: ${scheduleMsg.id}\nPesan ke ${scheduleMsg.targetNumber} gagal dikirim.\nError: ${sendError.message}\n\nJadwal telah dibatalkan otomatis.`,
+          });
+        } catch (notifyError) {
+          console.error("Error notifying creator:", notifyError);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error processing scheduled messages:", error);
   }
 }
