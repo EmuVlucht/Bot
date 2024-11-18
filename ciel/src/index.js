@@ -33,6 +33,9 @@ const msgRetryCounterCache = new NodeCache();
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 const question = (text) => new Promise((resolve) => rl.question(text, resolve));
 
+let pairingStarted = false;
+let phoneNumber = '';
+
 const printSystemInfo = () => {
     logger.banner();
     logger.systemInfo({
@@ -103,9 +106,9 @@ async function startCielBot() {
         groupMetadata: {}
     };
     
-    let phoneNumber = settings.pairing.phoneNumber || process.env.BOT_NUMBER;
-    
-    if (settings.pairing.enabled && !conn.authState.creds.registered) {
+    if (settings.pairing.enabled && !conn.authState.creds.registered && !phoneNumber) {
+        phoneNumber = settings.pairing.phoneNumber || process.env.BOT_NUMBER;
+        
         if (!phoneNumber) {
             phoneNumber = await question('Masukkan nomor WhatsApp Bot (contoh: 62812xxx): ');
         }
@@ -119,19 +122,6 @@ async function startCielBot() {
         }
         
         logger.info('Nomor berhasil diverifikasi. Menunggu koneksi...');
-        
-        setTimeout(async () => {
-            if (!conn.authState.creds.registered) {
-                logger.info('Meminta Pairing Code...');
-                try {
-                    const code = await conn.requestPairingCode(phoneNumber);
-                    logger.success(`Pairing Code: ${code}`);
-                    logger.info('Masukkan kode ini di WhatsApp > Linked Devices > Link with phone number');
-                } catch (e) {
-                    logger.error(`Gagal mendapatkan Pairing Code: ${e.message}`);
-                }
-            }
-        }, 3000);
     }
     
     setupExtensions(conn, global.store);
@@ -145,6 +135,24 @@ async function startCielBot() {
         
         if (!conn.authState.creds.registered) {
             logger.info(`Connection: ${connection || 'waiting'}`);
+        }
+        
+        if ((connection === 'connecting' || !!qr) && settings.pairing.enabled && phoneNumber && !conn.authState.creds.registered && !pairingStarted) {
+            setTimeout(async () => {
+                if (!pairingStarted && !conn.authState.creds.registered) {
+                    pairingStarted = true;
+                    logger.info('Meminta Pairing Code...');
+                    try {
+                        const code = await conn.requestPairingCode(phoneNumber);
+                        logger.success(`Pairing Code: ${code}`);
+                        logger.info('Masukkan kode ini di WhatsApp > Linked Devices > Link with phone number');
+                        logger.info('Kode berlaku selama 60 detik');
+                    } catch (e) {
+                        logger.error(`Gagal mendapatkan Pairing Code: ${e.message}`);
+                        pairingStarted = false;
+                    }
+                }
+            }, 3000);
         }
         
         if (qr && !settings.pairing.enabled) {
@@ -169,6 +177,7 @@ async function startCielBot() {
             } else if (reason === DisconnectReason.loggedOut || reason === DisconnectReason.forbidden) {
                 if (!conn.authState.creds.registered) {
                     logger.warn('Menunggu pairing code dimasukkan. Menghubungkan ulang dalam 5 detik...');
+                    pairingStarted = false;
                     setTimeout(() => startCielBot(), 5000);
                 } else {
                     logger.error('Session tidak valid. Hapus folder session dan scan ulang.');
