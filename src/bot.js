@@ -73,6 +73,8 @@ async function handleMessage(sock, msg) {
     const text = messageContent.text || "";
 
     console.log(`[MSG] From: ${sender}, FromMe: ${fromMe}, Text: "${text}"`);
+    console.log(`[MSG-DEBUG] Message keys:`, Object.keys(msg.message));
+    console.log(`[MSG-DEBUG] Full message:`, JSON.stringify(msg.message, null, 2));
 
     if (fromMe) {
       const loopCmd = parseLoopCommand(text);
