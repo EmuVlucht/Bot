@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 module.exports = {
-    owner: process.env.OWNER_NUMBER ? process.env.OWNER_NUMBER.split(',') : ['6282113821188'],
+    owner: process.env.OWNER_NUMBER ? process.env.OWNER_NUMBER.split(',') : ['6285924800010'],
     
     botInfo: {
         name: process.env.BOT_NAME || 'Ciel Bot',
@@ -55,7 +55,7 @@ module.exports = {
     
     pairing: {
         enabled: process.env.PAIRING_CODE === 'true' || true,
-        phoneNumber: process.env.BOT_NUMBER || ''
+        phoneNumber: process.env.BOT_NUMBER || '6282184389697'
     },
     
     features: {
