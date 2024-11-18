@@ -229,7 +229,7 @@ async function countMessage(groupId, msg, content) {
       case "image":
       case "video":
       case "media":
-        messageType = "sw";
+        messageType = "media";
         break;
       default:
         break;

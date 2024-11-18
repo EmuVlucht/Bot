@@ -24,6 +24,7 @@ ${data.text} Text
 ${data.link} Link
 ${data.sticker} Sticker
 ${data.audio} Audio
+${data.media} Media
 ${data.doc} Doc`;
 }
 
@@ -41,6 +42,7 @@ export function formatAllGroupsData(groupsData) {
     message += `${group.data.link} Link\n`;
     message += `${group.data.sticker} Sticker\n`;
     message += `${group.data.audio} Audio\n`;
+    message += `${group.data.media} Media\n`;
     message += `${group.data.doc} Doc\n`;
   }
   
@@ -56,6 +58,7 @@ export function parseInitData(text) {
     sticker: 0,
     oneTime: 0,
     link: 0,
+    media: 0,
     nullMsg: 0,
   };
   
@@ -74,6 +77,7 @@ export function parseInitData(text) {
       else if (type === "sticker") data.sticker = num;
       else if (type === "1×" || type === "1x") data.oneTime = num;
       else if (type === "link") data.link = num;
+      else if (type === "media") data.media = num;
       else if (type === "null") data.nullMsg = num;
     }
   }

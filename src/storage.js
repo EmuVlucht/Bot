@@ -141,6 +141,9 @@ export async function incrementCounter(groupId, type) {
     case "link":
       updateObj.link = data.link + 1;
       break;
+    case "media":
+      updateObj.media = data.media + 1;
+      break;
     case "nullMsg":
       updateObj.nullMsg = data.nullMsg + 1;
       break;
@@ -170,6 +173,7 @@ export async function rebaseData(groupId, data) {
       sticker: currentData.sticker + (data.sticker || 0),
       oneTime: currentData.oneTime + (data.oneTime || 0),
       link: currentData.link + (data.link || 0),
+      media: currentData.media + (data.media || 0),
       nullMsg: currentData.nullMsg + (data.nullMsg || 0),
       updatedAt: new Date(),
     })
@@ -350,6 +354,9 @@ export async function decrementCounter(groupId, type) {
       break;
     case "link":
       updateObj.link = Math.max(0, data.link - 1);
+      break;
+    case "media":
+      updateObj.media = Math.max(0, data.media - 1);
       break;
     case "nullMsg":
       updateObj.nullMsg = Math.max(0, data.nullMsg - 1);
