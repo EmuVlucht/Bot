@@ -81,6 +81,11 @@ async function checkAndUpdatePP(sock) {
     return;
   }
 
+  if (!sock.user?.id) {
+    console.log("[PP] Socket belum siap, skip PP check");
+    return;
+  }
+
   const ppType = getCurrentPPType();
 
   if (currentPP === ppType) {
@@ -116,6 +121,10 @@ async function checkAndUpdatePP(sock) {
     console.log(`[PP] PP berhasil diganti ke: ${ppName} (${ppFileName})`);
   } catch (error) {
     console.error("[PP] Error mengganti PP:", error.message);
+    if (error.message?.includes("Connection Closed") || error.message?.includes("not connected")) {
+      console.log("[PP] Koneksi terputus, menghentikan PP changer");
+      stopProfilePictureChanger();
+    }
   } finally {
     isChangingPP = false;
   }
@@ -130,13 +139,16 @@ export function setupProfilePictureChanger(sock) {
     checkAndUpdatePP(sock);
   }, 60000);
 
-  checkAndUpdatePP(sock);
+  setTimeout(() => {
+    checkAndUpdatePP(sock);
+  }, 5000);
 
   console.log("[PP] Profile Picture Auto-Changer aktif");
   console.log("[PP] Jadwal:");
   console.log("     - PP Malam: 17:00 - 05:00 WIT");
   console.log("     - PP Siang: 05:00 - 12:00 & 13:00 - 17:00 WIT");
   console.log("     - PP Khusus: Jam 12, Weekend, Hari Libur Nasional");
+  console.log("[PP] PP pertama akan dicek dalam 5 detik...");
 }
 
 export function stopProfilePictureChanger() {

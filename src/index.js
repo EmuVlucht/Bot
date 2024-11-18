@@ -121,6 +121,21 @@ async function handleLogout() {
 setPairingCallback(requestPairingCode);
 setLogoutCallback(handleLogout);
 
+async function cleanupOldSocket() {
+  if (currentSock) {
+    try {
+      console.log("[CLEANUP] Membersihkan socket lama...");
+      currentSock.ev.removeAllListeners();
+      currentSock.end();
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log("[CLEANUP] Socket lama dibersihkan");
+    } catch (e) {
+      console.log("[CLEANUP] Error:", e.message);
+    }
+    currentSock = null;
+  }
+}
+
 async function connectToWhatsApp() {
   if (isConnecting) {
     console.log("[CONNECT] Already connecting, skipping...");
@@ -130,6 +145,8 @@ async function connectToWhatsApp() {
   isConnecting = true;
   setConnectionState("connecting");
   broadcastStatus();
+  
+  await cleanupOldSocket();
   
   try {
     const connected = await testConnection();
@@ -305,9 +322,24 @@ async function connectToWhatsApp() {
         console.log(`Daily Report: 00:00 ${config.timezone}`);
         console.log("====================================\n");
 
-        setupMessageHandler(sock);
-        setupCronJobs(sock);
-        setupProfilePictureChanger(sock);
+        console.log("[INIT] Menunggu koneksi stabil (3 detik)...");
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        if (sock.user && currentSock === sock) {
+          console.log("[INIT] Koneksi stabil, mengaktifkan fitur...");
+          setupMessageHandler(sock);
+          setupCronJobs(sock);
+          
+          console.log("[INIT] Menunggu sebelum aktivasi PP changer (2 detik)...");
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          if (sock.user && currentSock === sock) {
+            setupProfilePictureChanger(sock);
+          }
+          console.log("[INIT] Semua fitur aktif!");
+        } else {
+          console.log("[INIT] Koneksi terputus sebelum fitur diaktifkan");
+        }
       }
     });
 
