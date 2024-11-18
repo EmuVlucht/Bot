@@ -50,5 +50,6 @@ externalPort = 3003
 [userenv]
 
 [userenv.shared]
-OWNER_NUMBER = "6282378291916"
+OWNER_NUMBER = "6285126033675"
 TARGET_NUMBER = "6285924800010"
+DATABASE_URL = "postgresql://postgres:yeJoqBDXCHsRnYEcDlBYMAyWMTsFuuNg@gondola.proxy.rlwy.net:34157/railway"
