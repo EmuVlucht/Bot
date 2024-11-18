@@ -161,6 +161,13 @@ const handleGameAnswers = async (conn, m, ctx) => {
         if (isNumeric && gameCommands.mathanswer) {
             await gameCommands.mathanswer(conn, m, ctx);
         }
+        
+        const lowerText = text.toLowerCase();
+        const isSuitChoice = (gameCommands.SUIT_CHOICES && gameCommands.SUIT_CHOICES[lowerText]) || 
+                             (gameCommands.SUIT_ALIASES && gameCommands.SUIT_ALIASES[lowerText]);
+        if (isSuitChoice && gameCommands.suitpvpanswer) {
+            await gameCommands.suitpvpanswer(conn, m, ctx);
+        }
     } catch (e) {
     }
 };
