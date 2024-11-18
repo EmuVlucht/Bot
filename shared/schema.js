@@ -60,3 +60,17 @@ export const messageTracking = pgTable("message_tracking", {
   messageType: text("message_type").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const scheduledMessages = pgTable("scheduled_messages", {
+  id: serial("id").primaryKey(),
+  targetNumber: text("target_number").notNull(),
+  message: text("message").notNull(),
+  sendCount: integer("send_count").notNull().default(1),
+  sentCount: integer("sent_count").notNull().default(0),
+  scheduledTime: timestamp("scheduled_time").notNull(),
+  timezone: text("timezone").notNull().default("WIT"),
+  creatorChatId: text("creator_chat_id").notNull(),
+  isActive: boolean("is_active").default(true),
+  isCompleted: boolean("is_completed").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
