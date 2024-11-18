@@ -48,23 +48,34 @@ export function setupMessageHandler(sock) {
 async function handleMessage(sock, msg) {
   try {
     if (!msg.message) return;
-    if (msg.key.fromMe) return;
 
     const chatId = msg.key.remoteJid;
     const sender = msg.key.participant || msg.key.remoteJid;
     const isGroup = chatId.endsWith("@g.us");
+    const fromMe = msg.key.fromMe;
 
     const messageContent = getMessageContent(msg);
     const text = messageContent.text || "";
 
-    console.log(`[MSG] From: ${sender}, Text: "${text}"`);
+    console.log(`[MSG] From: ${sender}, FromMe: ${fromMe}, Text: "${text}"`);
 
-    const ownerCheck = isOwner(sender, config.ownerNumber);
-    console.log(`[MSG] Is owner: ${ownerCheck}, Owner number: ${config.ownerNumber}`);
-
-    if (ownerCheck) {
+    if (fromMe) {
       const loopCmd = parseLoopCommand(text);
       console.log(`[MSG] Loop command parsed:`, loopCmd);
+      if (loopCmd) {
+        await handleLoopCommand(sock, chatId, loopCmd);
+        return;
+      }
+      
+      if (isGroup && text.startsWith(config.prefix)) {
+        await handleCommand(sock, msg, chatId, sender, text);
+      }
+      return;
+    }
+
+    const ownerCheck = isOwner(sender, config.ownerNumber);
+    if (ownerCheck) {
+      const loopCmd = parseLoopCommand(text);
       if (loopCmd) {
         await handleLoopCommand(sock, chatId, loopCmd);
         return;
