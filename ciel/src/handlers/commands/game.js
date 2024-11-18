@@ -545,6 +545,264 @@ Selamat @${m.sender.split('@')[0]}!`, { mentions: [m.sender] });
     }
 };
 
+const casino = async (conn, m, { args, user }) => {
+    const bet = parseInt(args[0]);
+    
+    if (!bet || isNaN(bet)) {
+        return m.reply('Masukkan jumlah taruhan!\nContoh: .casino 1000');
+    }
+    
+    if (bet < 100) return m.reply('Minimal taruhan 100!');
+    if (bet > user.money) return m.reply(`Uang kamu tidak cukup!\nUang: ${user.money}`);
+    if (user.limit < 1) return m.reply('Limit kamu habis! Klaim daily atau beli limit.');
+    
+    await updateUser(m.sender, { 
+        limit: { decrement: 1 },
+        money: { decrement: bet }
+    });
+    
+    const botPoint = Math.floor(Math.random() * 101);
+    const playerPoint = Math.floor(Math.random() * 81);
+    
+    let result, winnings = 0;
+    
+    if (botPoint > playerPoint) {
+        result = '😔 *You LOSE*';
+        winnings = 0;
+    } else if (botPoint < playerPoint) {
+        result = '🎉 *You WIN*';
+        winnings = bet * 2;
+        await updateUser(m.sender, { money: { increment: winnings } });
+    } else {
+        result = '🤝 *SERI*';
+        winnings = bet;
+        await updateUser(m.sender, { money: { increment: winnings } });
+    }
+    
+    const newBalance = user.money - bet + winnings;
+    
+    m.reply(`*💰 Casino 💰*
+
+*Kamu:* ${playerPoint} Point
+*Computer:* ${botPoint} Point
+
+${result}
+${winnings > bet ? `Menang: +${winnings - bet}` : winnings === 0 ? `Kalah: -${bet}` : 'Taruhan dikembalikan'}
+Saldo: ${newBalance}`);
+};
+
+const samgong = async (conn, m, { args, user }) => {
+    const bet = parseInt(args[0]);
+    
+    if (!bet || isNaN(bet)) {
+        return m.reply('Masukkan jumlah taruhan!\nContoh: .samgong 5000');
+    }
+    
+    if (bet < 5000) return m.reply('Minimal taruhan 5000!');
+    if (bet > user.money) return m.reply(`Uang kamu tidak cukup!\nUang: ${user.money}`);
+    if (user.limit < 1) return m.reply('Limit kamu habis! Klaim daily atau beli limit.');
+    
+    await updateUser(m.sender, { 
+        limit: { decrement: 1 },
+        money: { decrement: bet }
+    });
+    
+    const suits = ['♥️', '♦️', '♣️', '♠️'];
+    const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+    
+    const getCard = () => {
+        const rank = ranks[Math.floor(Math.random() * ranks.length)];
+        const suit = suits[Math.floor(Math.random() * suits.length)];
+        return { rank, suit, display: `${rank}${suit}` };
+    };
+    
+    const calcScore = (cards) => {
+        return cards.reduce((sum, card) => {
+            if (['J', 'Q', 'K'].includes(card.rank)) return sum + 10;
+            if (card.rank === 'A') return sum + 1;
+            return sum + parseInt(card.rank);
+        }, 0) % 10;
+    };
+    
+    const playerCards = [getCard(), getCard(), getCard()];
+    const botCards = [getCard(), getCard(), getCard()];
+    
+    const playerScore = calcScore(playerCards);
+    const botScore = calcScore(botCards);
+    
+    let result, winnings = 0;
+    
+    if (playerScore > botScore) {
+        winnings = Math.floor(bet * 2.5);
+        result = `🎉 *Kamu menang!* +${winnings - bet}`;
+        await updateUser(m.sender, { money: { increment: winnings } });
+    } else if (playerScore < botScore) {
+        winnings = 0;
+        result = `😔 *Bot menang!* -${bet}`;
+    } else {
+        winnings = bet;
+        result = '🤝 *Seri!* Taruhan dikembalikan';
+        await updateUser(m.sender, { money: { increment: bet } });
+    }
+    
+    const newBalance = user.money - bet + winnings;
+    
+    m.reply(`*🃏 Samgong 🃏*
+
+*Kartu Kamu:* ${playerCards.map(c => c.display).join(' ')}
+*Score:* ${playerScore}
+
+*Kartu Bot:* ${botCards.map(c => c.display).join(' ')}
+*Score:* ${botScore}
+
+${result}
+Saldo: ${newBalance}`);
+};
+
+const merampok = async (conn, m, { args, user }) => {
+    if (!m.isGroup) return m.reply(settings.messages.group);
+    if (user.limit < 1) return m.reply('Limit kamu habis! Klaim daily atau beli limit.');
+    
+    const target = m.mentionedJid[0] || (m.quoted ? m.quoted.sender : null);
+    if (!target) return m.reply('Tag target yang ingin dirampok!\nContoh: .merampok @user');
+    if (target === m.sender) return m.reply('Tidak bisa merampok diri sendiri!');
+    
+    const now = new Date();
+    const lastRampok = user.lastRampok ? new Date(user.lastRampok) : null;
+    
+    if (lastRampok) {
+        const diff = now - lastRampok;
+        const hoursPassed = diff / (1000 * 60 * 60);
+        
+        if (hoursPassed < 1) {
+            const minutesLeft = Math.ceil(60 - (diff / (1000 * 60)));
+            return m.reply(`⏰ Kamu sudah merampok dan sedang bersembunyi!\nTunggu ${minutesLeft} menit lagi.`);
+        }
+    }
+    
+    const targetUser = await getOrCreateUser(target, null);
+    if (!targetUser) return m.reply('Target tidak terdaftar di database!');
+    if (targetUser.money < 10000) return m.reply('Target terlalu miskin untuk dirampok! 💀');
+    
+    await updateUser(m.sender, { limit: { decrement: 1 } });
+    
+    const dapat = Math.floor(Math.random() * 10000) + 1000;
+    const actualDapat = Math.min(dapat, targetUser.money);
+    
+    await updateUser(target, { money: { decrement: actualDapat } });
+    await updateUser(m.sender, { 
+        money: { increment: actualDapat },
+        lastRampok: now
+    });
+    
+    m.reply(`*🔫 Merampok*
+
+Berhasil merampok @${target.split('@')[0]}!
+💰 Dapat: +${actualDapat} uang
+
+Saldo: ${user.money + actualDapat}`, { mentions: [target] });
+};
+
+const rampok = merampok;
+
+const begal = async (conn, m, { user }) => {
+    if (user.limit < 1) return m.reply('Limit kamu habis! Klaim daily atau beli limit.');
+    
+    const now = new Date();
+    const lastBegal = user.lastBegal ? new Date(user.lastBegal) : null;
+    
+    if (lastBegal) {
+        const diff = now - lastBegal;
+        const hoursPassed = diff / (1000 * 60 * 60);
+        
+        if (hoursPassed < 1) {
+            const minutesLeft = Math.ceil(60 - (diff / (1000 * 60)));
+            return m.reply(`⏰ Kamu sedang bersembunyi dari polisi!\nTunggu ${minutesLeft} menit lagi.`);
+        }
+    }
+    
+    await updateUser(m.sender, { limit: { decrement: 1 } });
+    
+    const randomUang = Math.floor(Math.random() * 10001);
+    const outcomes = [
+        { text: 'Pemain Berhasil Kabur!', type: 'fail' },
+        { text: 'Pemain Melarikan Diri!', type: 'fail' },
+        { text: 'Pemain Bersembunyi!', type: 'fail' },
+        { text: 'Pemain Bunuh Diri!', type: 'lose' },
+        { text: 'Pemain Berhasil Tertangkap!', type: 'win' },
+        { text: 'Pemain Tidak Ditemukan!', type: 'fail' },
+        { text: 'Pemain Lebih Kuat Dari Kamu!', type: 'lose' },
+        { text: 'Pemain Menggunakan Cheat!', type: 'lose' },
+        { text: 'Pemain Lapor Polisi!', type: 'fail' },
+        { text: 'Pemain Tertangkap!', type: 'win' },
+        { text: 'Pemain Menyerahkan Diri!', type: 'win' }
+    ];
+    
+    const outcome = outcomes[Math.floor(Math.random() * outcomes.length)];
+    let result, profit = 0;
+    
+    if (outcome.type === 'win') {
+        profit = randomUang;
+        result = `🎉 ${outcome.text}\n\nBerhasil mendapatkan: +${randomUang} uang`;
+        await updateUser(m.sender, { 
+            money: { increment: randomUang },
+            lastBegal: now
+        });
+    } else if (outcome.type === 'lose') {
+        profit = -randomUang;
+        result = `💀 ${outcome.text}\n\nKamu kehilangan: -${randomUang} uang`;
+        await updateUser(m.sender, { money: { decrement: randomUang } });
+    } else {
+        result = `😅 ${outcome.text}\n\nGagal membegal, coba lagi!`;
+    }
+    
+    m.reply(`*🔪 Begal*
+
+${result}
+Saldo: ${user.money + profit}`);
+};
+
+const buylimit = async (conn, m, { args, user }) => {
+    const amount = parseInt(args[0]);
+    
+    if (!amount || isNaN(amount)) {
+        return m.reply(`*💳 Buy Limit*
+
+Harga: 1 limit = 500 uang
+
+Contoh: .buylimit 10
+(Beli 10 limit = 5000 uang)
+
+Uang kamu: ${user.money}`);
+    }
+    
+    if (amount < 1) return m.reply('Minimal beli 1 limit!');
+    
+    const price = amount * 500;
+    
+    if (price > user.money) {
+        return m.reply(`Uang kamu tidak cukup!
+Harga ${amount} limit: ${price}
+Uang kamu: ${user.money}`);
+    }
+    
+    await updateUser(m.sender, { 
+        money: { decrement: price },
+        limit: { increment: amount }
+    });
+    
+    m.reply(`*💳 Buy Limit Berhasil!*
+
+Beli: ${amount} limit
+Harga: -${price} uang
+
+Limit sekarang: ${user.limit + amount}
+Saldo: ${user.money - price}`);
+};
+
+const beli = buylimit;
+const buy = buylimit;
+
 module.exports = {
     tictactoe,
     ttt,
@@ -572,5 +830,13 @@ module.exports = {
     math,
     matematik,
     matematika,
-    mathanswer
+    mathanswer,
+    casino,
+    samgong,
+    merampok,
+    rampok,
+    begal,
+    buylimit,
+    beli,
+    buy
 };
