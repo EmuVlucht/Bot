@@ -56,6 +56,8 @@ async function startCielBot() {
         process.exit(1);
     }
     
+    startServer(null);
+    
     const sessionFolder = path.join(process.cwd(), 'sessions', settings.session.folderName);
     await fs.ensureDir(sessionFolder);
     
