@@ -57,8 +57,14 @@ async function handleMessage(sock, msg) {
     const messageContent = getMessageContent(msg);
     const text = messageContent.text || "";
 
-    if (isOwner(sender, config.ownerNumber)) {
+    console.log(`[MSG] From: ${sender}, Text: "${text}"`);
+
+    const ownerCheck = isOwner(sender, config.ownerNumber);
+    console.log(`[MSG] Is owner: ${ownerCheck}, Owner number: ${config.ownerNumber}`);
+
+    if (ownerCheck) {
       const loopCmd = parseLoopCommand(text);
+      console.log(`[MSG] Loop command parsed:`, loopCmd);
       if (loopCmd) {
         await handleLoopCommand(sock, chatId, loopCmd);
         return;
