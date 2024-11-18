@@ -17,14 +17,14 @@ export function formatCheckpointData(data) {
   
   return `${dateTime}
 
+${data.nullMsg} Null
 ${data.sw} Sw
-${data.doc} Doc
-${data.text} Text
-${data.audio} Audio
-${data.sticker} Sticker
 ${data.oneTime} 1×
+${data.text} Text
 ${data.link} Link
-${data.nullMsg} Null`;
+${data.sticker} Sticker
+${data.audio} Audio
+${data.doc} Doc`;
 }
 
 export function formatAllGroupsData(groupsData) {
@@ -34,14 +34,14 @@ export function formatAllGroupsData(groupsData) {
   
   for (const group of groupsData) {
     message += `\nGrup ${group.groupName}\n`;
-    message += `${group.data.sw} Sw\n`;
-    message += `${group.data.doc} Doc\n`;
-    message += `${group.data.text} Text\n`;
-    message += `${group.data.audio} Audio\n`;
-    message += `${group.data.sticker} Sticker\n`;
-    message += `${group.data.oneTime} 1×\n`;
-    message += `${group.data.link} Link\n`;
     message += `${group.data.nullMsg} Null\n`;
+    message += `${group.data.sw} Sw\n`;
+    message += `${group.data.oneTime} 1×\n`;
+    message += `${group.data.text} Text\n`;
+    message += `${group.data.link} Link\n`;
+    message += `${group.data.sticker} Sticker\n`;
+    message += `${group.data.audio} Audio\n`;
+    message += `${group.data.doc} Doc\n`;
   }
   
   return message;
