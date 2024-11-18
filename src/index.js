@@ -12,11 +12,15 @@ import { setupCronJobs } from "./cron.js";
 import { config } from "./config.js";
 import { testConnection } from "./db.js";
 import { initDBAuthState } from "./sessionStore.js";
-import { startWebServer, updateQR, clearQR, setConnected, setDisconnected, setSocketInstance, clearPairingCode } from "./web.js";
+import { startWebServer, updateQR, clearQR, setConnected, setDisconnected, setSocketInstance, clearPairingCode, updatePairingCode, setPairingCallback } from "./web.js";
 
 const logger = pino({ level: "silent" });
 const isRailway = process.env.RAILWAY_ENVIRONMENT !== undefined;
 const useDBSession = isRailway || process.env.USE_DB_SESSION === "true";
+
+let currentSock = null;
+let pairingRequested = false;
+let pendingPairingPhone = null;
 
 startWebServer();
 
@@ -35,6 +39,23 @@ async function getAuthState() {
     return await useMultiFileAuthState("auth_info");
   }
 }
+
+async function requestPairingForPhone(phone) {
+  pendingPairingPhone = phone;
+  pairingRequested = true;
+  
+  if (currentSock) {
+    try {
+      currentSock.end();
+    } catch (e) {}
+  }
+  
+  setTimeout(() => {
+    connectToWhatsApp();
+  }, 1000);
+}
+
+setPairingCallback(requestPairingForPhone);
 
 async function connectToWhatsApp() {
   const connected = await testConnection();
@@ -60,6 +81,7 @@ async function connectToWhatsApp() {
     markOnlineOnConnect: true,
   });
 
+  currentSock = sock;
   setSocketInstance(sock);
 
   sock.ev.on("creds.update", async (creds) => {
@@ -71,15 +93,40 @@ async function connectToWhatsApp() {
     const { connection, lastDisconnect, qr } = update;
 
     if (qr) {
-      console.log("\n====================================");
-      console.log("Scan QR Code di bawah ini dengan WhatsApp:");
-      console.log("====================================\n");
-      qrcode.generate(qr, { small: true });
-      
-      updateQR(qr);
-      
-      if (isRailway) {
-        console.log("\n[RAILWAY] QR Code juga tersedia di logs Railway Dashboard");
+      if (pairingRequested && pendingPairingPhone) {
+        try {
+          console.log(`\n====================================`);
+          console.log(`Requesting pairing code for: ${pendingPairingPhone}`);
+          console.log(`====================================\n`);
+          
+          const code = await sock.requestPairingCode(pendingPairingPhone);
+          console.log(`Pairing code generated: ${code}`);
+          updatePairingCode(code);
+          
+          pairingRequested = false;
+          pendingPairingPhone = null;
+        } catch (error) {
+          console.error("Error requesting pairing code:", error);
+          pairingRequested = false;
+          pendingPairingPhone = null;
+          
+          console.log("\n====================================");
+          console.log("Scan QR Code di bawah ini dengan WhatsApp:");
+          console.log("====================================\n");
+          qrcode.generate(qr, { small: true });
+          updateQR(qr);
+        }
+      } else {
+        console.log("\n====================================");
+        console.log("Scan QR Code di bawah ini dengan WhatsApp:");
+        console.log("====================================\n");
+        qrcode.generate(qr, { small: true });
+        
+        updateQR(qr);
+        
+        if (isRailway) {
+          console.log("\n[RAILWAY] QR Code juga tersedia di logs Railway Dashboard");
+        }
       }
     }
 
@@ -111,6 +158,8 @@ async function connectToWhatsApp() {
         }
       }
     } else if (connection === "open") {
+      pairingRequested = false;
+      pendingPairingPhone = null;
       clearQR();
       setConnected({
         owner: config.ownerNumber,

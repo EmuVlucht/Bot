@@ -12,6 +12,7 @@ let currentPairingCode = null;
 let connectionStatus = "disconnected";
 let botInfo = null;
 let socketInstance = null;
+let pairingCallback = null;
 
 export function updateQR(qrData) {
   currentQR = qrData;
@@ -51,6 +52,14 @@ export function setSocketInstance(sock) {
 
 export function getSocketInstance() {
   return socketInstance;
+}
+
+export function setPairingCallback(callback) {
+  pairingCallback = callback;
+}
+
+export function getPairingCallback() {
+  return pairingCallback;
 }
 
 app.get("/", async (req, res) => {
@@ -388,13 +397,12 @@ app.post("/request-pairing", async (req, res) => {
   }
 
   try {
-    const sock = getSocketInstance();
-    if (sock && sock.requestPairingCode) {
-      const code = await sock.requestPairingCode(cleanPhone);
-      updatePairingCode(code);
-      console.log(`Pairing code generated for ${cleanPhone}: ${code}`);
+    if (pairingCallback) {
+      connectionStatus = "requesting_pairing";
+      console.log(`Requesting pairing code for: ${cleanPhone}`);
+      await pairingCallback(cleanPhone);
     } else {
-      console.error("Socket not available or pairing not supported");
+      console.error("Pairing callback not set");
     }
   } catch (error) {
     console.error("Error requesting pairing code:", error);
