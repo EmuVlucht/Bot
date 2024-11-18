@@ -1,4 +1,4 @@
-const { jidNormalizedUser, getContentType } = require('@whiskeysockets/baileys');
+const { jidNormalizedUser, getContentType } = require('baileys');
 const settings = require('../../config/settings');
 const { logger } = require('../utils/logger');
 const { antiSpam } = require('../utils/antiSpam');

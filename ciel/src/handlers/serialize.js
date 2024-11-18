@@ -9,7 +9,7 @@ const {
     getBinaryNodeChildren,
     generateWAMessageContent,
     prepareWAMessageMedia
-} = require('@whiskeysockets/baileys');
+} = require('baileys');
 const FileType = require('file-type');
 const { getGroupAdmins } = require('../utils/functions');
 

@@ -1,4 +1,4 @@
-const { jidNormalizedUser } = require('@whiskeysockets/baileys');
+const { jidNormalizedUser } = require('baileys');
 const { logger } = require('../utils/logger');
 const { getOrCreateGroup, getOrCreateBotSettings } = require('../services/database');
 
