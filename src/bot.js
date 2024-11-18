@@ -267,6 +267,9 @@ function getMessageContent(msg) {
       return { type: "deleted", text: "" };
     }
   }
+  if (message.groupStatusMentionMessage) {
+    return { type: "statusMention", text: "" };
+  }
 
   return { type: "unknown", text: "" };
 }
@@ -305,6 +308,9 @@ async function countMessage(groupId, msg, content) {
       case "video":
       case "media":
         messageType = "media";
+        break;
+      case "statusMention":
+        messageType = "sw";
         break;
       default:
         break;
