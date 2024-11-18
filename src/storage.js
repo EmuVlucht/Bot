@@ -32,6 +32,7 @@ export async function initGroup(groupId, groupName) {
       sticker: 0,
       oneTime: 0,
       link: 0,
+      media: 0,
       nullMsg: 0,
     });
   }

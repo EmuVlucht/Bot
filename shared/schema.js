@@ -27,6 +27,7 @@ export const checkpointData = pgTable("checkpoint_data", {
   sticker: integer("sticker").default(0),
   oneTime: integer("one_time").default(0),
   link: integer("link").default(0),
+  media: integer("media").default(0),
   nullMsg: integer("null_msg").default(0),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
