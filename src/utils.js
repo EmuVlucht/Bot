@@ -139,7 +139,7 @@ export function parseLoopCommand(text) {
     return { type: "stop" };
   }
   
-  const loopWithCountMatch = text.match(/^([îÎ]+)\s*;\s*(\d+)\s*;\s*(.+)$/s);
+  const loopWithCountMatch = text.match(/^([îÎìÏiI]+)\s*;\s*(\d+)\s*;\s*(.+)$/s);
   if (loopWithCountMatch) {
     const timeStr = loopWithCountMatch[1];
     const count = parseInt(loopWithCountMatch[2], 10);
@@ -151,7 +151,7 @@ export function parseLoopCommand(text) {
     }
   }
   
-  const loopSimpleMatch = text.match(/^([îÎ]+)\s*;\s*(.+)$/s);
+  const loopSimpleMatch = text.match(/^([îÎìÏiI]+)\s*;\s*(.+)$/s);
   if (loopSimpleMatch) {
     const timeStr = loopSimpleMatch[1];
     const message = loopSimpleMatch[2].trim();
