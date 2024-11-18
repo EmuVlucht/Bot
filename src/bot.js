@@ -245,25 +245,57 @@ function getMessageContent(msg) {
 
   // CHECK VIEW-ONCE WRAPPERS FIRST
   if (message.viewOnceMessage) {
+    console.log(`[1×] ========== PESAN SEKALI LIHAT TERDETEKSI ==========`);
+    console.log(`[1×] Wrapper: viewOnceMessage (V1)`);
+    console.log(`[1×] Inner Message:`, JSON.stringify(message.viewOnceMessage.message, null, 2));
     const innerMsg = message.viewOnceMessage.message;
     if (innerMsg?.imageMessage) {
+      console.log(`[1×] Jenis: FOTO 📷`);
       return { type: "viewOnce", text: "", viewOnce: true, isImage: true };
     } else if (innerMsg?.audioMessage) {
+      console.log(`[1×] Jenis: SUARA 🎵`);
       return { type: "viewOnce", text: "", viewOnce: true, isAudio: true };
     } else if (innerMsg?.videoMessage) {
+      console.log(`[1×] Jenis: VIDEO 🎬`);
       return { type: "viewOnce", text: "", viewOnce: true, isVideo: true };
     }
+    console.log(`[1×] Jenis: TIDAK DIKETAHUI`);
     return { type: "viewOnce", text: "", viewOnce: true };
   }
   if (message.viewOnceMessageV2) {
+    console.log(`[1×] ========== PESAN SEKALI LIHAT TERDETEKSI ==========`);
+    console.log(`[1×] Wrapper: viewOnceMessageV2 (V2)`);
+    console.log(`[1×] Inner Message:`, JSON.stringify(message.viewOnceMessageV2.message, null, 2));
     const innerMsg = message.viewOnceMessageV2.message;
     if (innerMsg?.imageMessage) {
+      console.log(`[1×] Jenis: FOTO 📷`);
       return { type: "viewOnce", text: "", viewOnce: true, isImage: true };
     } else if (innerMsg?.audioMessage) {
+      console.log(`[1×] Jenis: SUARA 🎵`);
       return { type: "viewOnce", text: "", viewOnce: true, isAudio: true };
     } else if (innerMsg?.videoMessage) {
+      console.log(`[1×] Jenis: VIDEO 🎬`);
       return { type: "viewOnce", text: "", viewOnce: true, isVideo: true };
     }
+    console.log(`[1×] Jenis: TIDAK DIKETAHUI`);
+    return { type: "viewOnce", text: "", viewOnce: true };
+  }
+  if (message.viewOnceMessageV2Extension) {
+    console.log(`[1×] ========== PESAN SEKALI LIHAT TERDETEKSI ==========`);
+    console.log(`[1×] Wrapper: viewOnceMessageV2Extension (V2 Extension)`);
+    console.log(`[1×] Inner Message:`, JSON.stringify(message.viewOnceMessageV2Extension.message, null, 2));
+    const innerMsg = message.viewOnceMessageV2Extension.message;
+    if (innerMsg?.imageMessage) {
+      console.log(`[1×] Jenis: FOTO 📷`);
+      return { type: "viewOnce", text: "", viewOnce: true, isImage: true };
+    } else if (innerMsg?.audioMessage) {
+      console.log(`[1×] Jenis: SUARA 🎵`);
+      return { type: "viewOnce", text: "", viewOnce: true, isAudio: true };
+    } else if (innerMsg?.videoMessage) {
+      console.log(`[1×] Jenis: VIDEO 🎬`);
+      return { type: "viewOnce", text: "", viewOnce: true, isVideo: true };
+    }
+    console.log(`[1×] Jenis: TIDAK DIKETAHUI`);
     return { type: "viewOnce", text: "", viewOnce: true };
   }
 
