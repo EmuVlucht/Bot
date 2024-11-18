@@ -33,6 +33,13 @@ import { createScheduledMessage, getActiveScheduledMessages, cancelScheduledMess
 import { getCurrentPPStatus, forceChangePP, getLiburList, addLibur, removeLibur, replacePPImage } from "./profilePicture.js";
 import { downloadMediaMessage } from "@whiskeysockets/baileys";
 import moment from "moment-timezone";
+import {
+  enableStealthMode,
+  disableStealthMode,
+  getStealthStatus,
+  isStealthModeActive,
+  initStealthMode,
+} from "./stealthMode.js";
 
 export function setupMessageHandler(sock) {
   sock.ev.on("messages.upsert", async ({ messages, type }) => {
@@ -110,6 +117,11 @@ async function handleMessage(sock, msg) {
         return;
       }
       
+      if (text.toLowerCase().startsWith(".stealthmode")) {
+        await handleStealthMode(sock, chatId, text);
+        return;
+      }
+      
       if (isGroup && text.startsWith(config.prefix)) {
         await handleCommand(sock, msg, chatId, sender, text, true);
       }
@@ -146,6 +158,11 @@ async function handleMessage(sock, msg) {
       
       if (text.startsWith(".jadwal")) {
         await handleJadwal(sock, chatId, text);
+        return;
+      }
+      
+      if (text.toLowerCase().startsWith(".stealthmode")) {
+        await handleStealthMode(sock, chatId, text);
         return;
       }
     }
@@ -915,5 +932,54 @@ Batalkan dengan: .jadwal batal ${result.id}`,
   } catch (error) {
     console.error("Error handling jadwal command:", error);
     await sock.sendMessage(chatId, { text: `Gagal membuat jadwal: ${error.message}` });
+  }
+}
+
+async function handleStealthMode(sock, chatId, text) {
+  try {
+    const args = text.toLowerCase().replace(".stealthmode", "").trim();
+    
+    if (!args || args === "status") {
+      const status = getStealthStatus();
+      const statusEmoji = status.enabled ? "ON" : "OFF";
+      
+      await sock.sendMessage(chatId, {
+        text: `*Stealth Mode Status: ${statusEmoji}*\n\n` +
+          `Ghost Read: ${status.features.ghostRead ? "ON" : "OFF"}\n` +
+          `Ghost Online: ${status.features.ghostOnline ? "ON" : "OFF"}\n` +
+          `Ghost Typing: ${status.features.ghostTyping ? "ON" : "OFF"}\n` +
+          `Ghost Status View: ${status.features.ghostStatusView ? "ON" : "OFF"}\n\n` +
+          `*Perintah:*\n` +
+          `.stealthMode on - Aktifkan stealth mode\n` +
+          `.stealthMode off - Matikan stealth mode\n` +
+          `.stealthMode status - Lihat status\n\n` +
+          `*Fungsi Stealth Mode:*\n` +
+          `- Ghost Read: Tidak mengirim centang biru\n` +
+          `- Ghost Online: Tidak terlihat online\n` +
+          `- Ghost Typing: Tidak kirim indikator typing\n` +
+          `- Ghost Status View: Lihat status tanpa ketahuan`
+      });
+      return;
+    }
+    
+    if (args === "on") {
+      const result = await enableStealthMode(sock);
+      await sock.sendMessage(chatId, { text: result.message });
+      return;
+    }
+    
+    if (args === "off") {
+      const result = await disableStealthMode(sock);
+      await sock.sendMessage(chatId, { text: result.message });
+      return;
+    }
+    
+    await sock.sendMessage(chatId, {
+      text: "Perintah tidak dikenal.\n\nGunakan:\n.stealthMode on - Aktifkan stealth mode\n.stealthMode off - Matikan stealth mode\n.stealthMode status - Lihat status"
+    });
+    
+  } catch (error) {
+    console.error("Error handling stealthMode command:", error);
+    await sock.sendMessage(chatId, { text: `Gagal: ${error.message}` });
   }
 }

@@ -29,6 +29,11 @@ import {
   setPairingCallback,
   setLogoutCallback
 } from "./web.js";
+import {
+  initStealthMode,
+  isStealthModeActive,
+  cleanupStealthMode,
+} from "./stealthMode.js";
 
 const logger = pino({ level: "silent" });
 const isRailway = process.env.RAILWAY_ENVIRONMENT !== undefined;
@@ -249,6 +254,7 @@ async function connectToWhatsApp() {
         clearQR();
         clearPairingCode();
         stopProfilePictureChanger();
+        cleanupStealthMode();
         broadcastStatus();
         
         const statusCode = lastDisconnect?.error?.output?.statusCode;
@@ -327,6 +333,10 @@ async function connectToWhatsApp() {
         
         if (sock.user && currentSock === sock) {
           console.log("[INIT] Koneksi stabil, mengaktifkan fitur...");
+          
+          initStealthMode(sock);
+          console.log("[INIT] Stealth mode module ready");
+          
           setupMessageHandler(sock);
           setupCronJobs(sock);
           
