@@ -71,15 +71,19 @@ async function updateLiveMessages(sock) {
           remoteJid: liveMsg.groupId,
           id: liveMsg.messageId,
           fromMe: true,
+          participant: sock.user?.id,
         };
 
         await sock.sendMessage(
           liveMsg.groupId,
-          { text: formatCheckpointData(data) + "\n\n[LIVE - Update setiap 2 menit]" },
-          { edit: messageKey }
+          { 
+            text: formatCheckpointData(data) + "\n\n[LIVE - Update setiap 2 menit]",
+            edit: messageKey
+          }
         );
+        console.log(`[LIVE] Updated message ${liveMsg.messageId} in ${liveMsg.groupId}`);
       } catch (editError) {
-        console.error("Error editing live message:", editError);
+        console.error("Error editing live message:", editError.message);
         await stopLiveMessage(liveMsg.groupId);
       }
     }
