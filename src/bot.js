@@ -99,12 +99,37 @@ async function handleMessage(sock, msg) {
     const isGroup = chatId.endsWith("@g.us");
     const fromMe = msg.key.fromMe;
 
+    const msgKeys = Object.keys(msg.message);
+    const hasViewOnce = msgKeys.some(k => k.toLowerCase().includes('viewonce') || k.toLowerCase().includes('view_once'));
+    
+    if (hasViewOnce) {
+      console.log(`[1×] ##########################################`);
+      console.log(`[1×] VIEW-ONCE MESSAGE DETECTED IN RAW MESSAGE!`);
+      console.log(`[1×] Chat: ${chatId}`);
+      console.log(`[1×] Sender: ${sender}`);
+      console.log(`[1×] Keys: ${JSON.stringify(msgKeys)}`);
+      console.log(`[1×] Full Raw Message:`, JSON.stringify(msg.message, null, 2));
+      console.log(`[1×] ##########################################`);
+    }
+
     const messageContent = getMessageContent(msg);
     const text = messageContent.text || "";
 
     console.log(`[MSG] From: ${sender}, FromMe: ${fromMe}, Text: "${text}"`);
-    console.log("[MSG] Message Keys:", Object.keys(msg.message));
+    console.log("[MSG] Message Keys:", msgKeys);
     console.log("[MSG] Full Message:", JSON.stringify(msg.message, null, 2));
+    
+    if (messageContent.viewOnce || messageContent.type === "viewOnce") {
+      console.log(`[1×] ========================================`);
+      console.log(`[1×] PESAN SEKALI LIHAT TERPROSES!`);
+      console.log(`[1×] Chat: ${chatId}`);
+      console.log(`[1×] Sender: ${sender}`);
+      console.log(`[1×] Type: ${messageContent.type}`);
+      console.log(`[1×] isImage: ${messageContent.isImage || false}`);
+      console.log(`[1×] isVideo: ${messageContent.isVideo || false}`);
+      console.log(`[1×] isAudio: ${messageContent.isAudio || false}`);
+      console.log(`[1×] ========================================`);
+    }
 
     if (fromMe) {
       const loopCmd = parseLoopCommand(text);
