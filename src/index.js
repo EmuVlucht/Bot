@@ -14,6 +14,7 @@ import { config } from "./config.js";
 import { setupProfilePictureChanger, stopProfilePictureChanger } from "./profilePicture.js";
 import { testConnection } from "./db.js";
 import { initDBAuthState, clearAllSessions } from "./sessionStore.js";
+import { runMigrations } from "./migrate.js";
 import { 
   startWebServer, 
   updateQR, 
@@ -41,8 +42,6 @@ const RECONNECT_INTERVAL = 5000;
 
 let pairingMode = null;
 let pendingPairingPhone = null;
-
-startWebServer();
 
 async function getAuthState() {
   if (useDBSession) {
@@ -334,13 +333,31 @@ process.on("unhandledRejection", (err) => {
   console.error("[PROCESS] Unhandled rejection:", err);
 });
 
-console.log("====================================");
-console.log("WhatsApp Checkpoint Bot");
-console.log("====================================");
-console.log(`Environment: ${isRailway ? "Railway" : "Local/Replit"}`);
-console.log("Memulai bot...\n");
+async function main() {
+  console.log("====================================");
+  console.log("WhatsApp Checkpoint Bot v2.0");
+  console.log("====================================");
+  console.log(`Environment: ${isRailway ? "Railway" : "Local/Replit"}`);
+  console.log(`Session Mode: ${useDBSession ? "Database" : "File"}`);
+  console.log("====================================\n");
+  
+  try {
+    console.log("[INIT] Running database migrations...");
+    await runMigrations();
+    console.log("[INIT] Migrations completed\n");
+  } catch (err) {
+    console.error("[INIT] Migration failed:", err.message);
+    console.log("[INIT] Continuing anyway - tables may already exist\n");
+  }
+  
+  console.log("[INIT] Starting web server...");
+  startWebServer();
+  
+  console.log("[INIT] Connecting to WhatsApp...\n");
+  await connectToWhatsApp();
+}
 
-connectToWhatsApp().catch((err) => {
+main().catch((err) => {
   console.error("[INIT] Failed to start bot:", err);
   process.exit(1);
 });
