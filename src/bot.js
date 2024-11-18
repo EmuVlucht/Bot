@@ -83,6 +83,8 @@ async function handleMessage(sock, msg) {
     const text = messageContent.text || "";
 
     console.log(`[MSG] From: ${sender}, FromMe: ${fromMe}, Text: "${text}"`);
+    console.log("[MSG] Message Keys:", Object.keys(msg.message));
+    console.log("[MSG] Full Message:", JSON.stringify(msg.message, null, 2));
 
     if (fromMe) {
       const loopCmd = parseLoopCommand(text);
@@ -91,37 +93,37 @@ async function handleMessage(sock, msg) {
         await handleLoopCommand(sock, chatId, loopCmd);
         return;
       }
-      
+
       if (text.startsWith(".kirim")) {
         await handleKirim(sock, chatId, text);
         return;
       }
-      
+
       if (text.startsWith(".pp")) {
         await handlePP(sock, msg, chatId, text);
         return;
       }
-      
+
       if (text.startsWith(".libur")) {
         await handleLibur(sock, chatId, text);
         return;
       }
-      
+
       if (text.startsWith(".gantipp")) {
         await handleGantiPP(sock, msg, chatId, text);
         return;
       }
-      
+
       if (text.startsWith(".jadwal")) {
         await handleJadwal(sock, chatId, text);
         return;
       }
-      
+
       if (text.toLowerCase().startsWith(".stealthmode")) {
         await handleStealthMode(sock, chatId, text);
         return;
       }
-      
+
       if (isGroup && text.startsWith(config.prefix)) {
         await handleCommand(sock, msg, chatId, sender, text, true);
       }
@@ -135,32 +137,32 @@ async function handleMessage(sock, msg) {
         await handleLoopCommand(sock, chatId, loopCmd);
         return;
       }
-      
+
       if (text.startsWith(".kirim")) {
         await handleKirim(sock, chatId, text);
         return;
       }
-      
+
       if (text.startsWith(".pp")) {
         await handlePP(sock, msg, chatId, text);
         return;
       }
-      
+
       if (text.startsWith(".libur")) {
         await handleLibur(sock, chatId, text);
         return;
       }
-      
+
       if (text.startsWith(".gantipp")) {
         await handleGantiPP(sock, msg, chatId, text);
         return;
       }
-      
+
       if (text.startsWith(".jadwal")) {
         await handleJadwal(sock, chatId, text);
         return;
       }
-      
+
       if (text.toLowerCase().startsWith(".stealthmode")) {
         await handleStealthMode(sock, chatId, text);
         return;
@@ -201,7 +203,7 @@ async function handleLoopCommand(sock, chatId, cmd) {
     } else if (cmd.type === "start") {
       await createLoopMessage(chatId, cmd.message, cmd.intervalMs, cmd.count);
       const intervalText = formatInterval(cmd.intervalMs);
-      
+
       if (cmd.unlimited) {
         await sock.sendMessage(chatId, { 
           text: `Loop pesan aktif!\nInterval: ${intervalText}\nJumlah: Tak terbatas\nPesan: ${cmd.message}\n\nHentikan dengan: stop ; 0` 
@@ -488,7 +490,7 @@ async function handleRebase(sock, msg, groupId, dataText) {
 async function handleKirim(sock, chatId, text) {
   try {
     const parts = text.replace(".kirim", "").trim().split(/\s+/);
-    
+
     if (parts.length < 3 || (parts.length === 1 && parts[0] === "")) {
       const templates = getAvailableTemplates();
       await sock.sendMessage(chatId, {
@@ -496,9 +498,9 @@ async function handleKirim(sock, chatId, text) {
       });
       return;
     }
-    
+
     let jenis, jumlah, nomorTujuan, pesanKirim;
-    
+
     const customMatch = text.match(/\.kirim\s+"([^"]+)"\s+(\d+)\s+(\d+)/);
     if (customMatch) {
       pesanKirim = customMatch[1];
@@ -508,7 +510,7 @@ async function handleKirim(sock, chatId, text) {
       jenis = parts[0];
       jumlah = parseInt(parts[1]);
       nomorTujuan = parts[2];
-      
+
       pesanKirim = getTemplate(jenis);
       if (!pesanKirim) {
         const templates = getAvailableTemplates();
@@ -518,36 +520,36 @@ async function handleKirim(sock, chatId, text) {
         return;
       }
     }
-    
+
     if (isNaN(jumlah) || jumlah < 1) {
       await sock.sendMessage(chatId, { text: "Jumlah harus berupa angka minimal 1." });
       return;
     }
-    
+
     if (jumlah > 100) {
       await sock.sendMessage(chatId, { text: "Maksimal 100 pesan per perintah." });
       return;
     }
-    
+
     if (!nomorTujuan || !/^\d+$/.test(nomorTujuan)) {
       await sock.sendMessage(chatId, { text: "Nomor tujuan tidak valid. Gunakan format: 62xxx" });
       return;
     }
-    
+
     const targetJid = `${nomorTujuan}@s.whatsapp.net`;
-    
+
     await sock.sendMessage(chatId, {
       text: `Mengirim "${pesanKirim}" sebanyak ${jumlah}x ke ${nomorTujuan}...`,
     });
-    
+
     let sukses = 0;
     let gagal = 0;
-    
+
     for (let i = 0; i < jumlah; i++) {
       try {
         await sock.sendMessage(targetJid, { text: pesanKirim });
         sukses++;
-        
+
         if (jumlah > 1) {
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
@@ -556,11 +558,11 @@ async function handleKirim(sock, chatId, text) {
         gagal++;
       }
     }
-    
+
     await sock.sendMessage(chatId, {
       text: `Selesai!\nBerhasil: ${sukses}\nGagal: ${gagal}`,
     });
-    
+
   } catch (error) {
     console.error("Error handling kirim:", error);
     await sock.sendMessage(chatId, { text: "Gagal mengirim pesan." });
@@ -570,15 +572,15 @@ async function handleKirim(sock, chatId, text) {
 async function handlePP(sock, msg, chatId, text) {
   try {
     const args = text.replace(".pp", "").trim().toLowerCase();
-    
+
     if (!args || args === "status") {
       const status = getCurrentPPStatus();
       const statusText = `📷 *Status Profile Picture*\n\nPP Saat Ini: ${status.currentPP ? status.name : "Belum diset"}\nPP Seharusnya: ${status.name}\nFile: ${status.fileName}\nHari Libur: ${status.isLibur ? "Ya" : "Tidak"}\n\n*Jadwal Otomatis:*\n- PP Malam (A): 17:00 - 05:00 WIT\n- PP Siang (B): 05:00 - 12:00 & 13:00 - 17:00 WIT\n- PP Khusus (C): Jam 12, Weekend, Libur Nasional\n\n*Perintah:*\n.pp status - Lihat status\n.pp malam - Ganti ke PP Malam\n.pp siang - Ganti ke PP Siang\n.pp khusus - Ganti ke PP Khusus`;
-      
+
       await sock.sendMessage(chatId, { text: statusText });
       return;
     }
-    
+
     let ppType;
     switch (args) {
       case "malam":
@@ -599,15 +601,15 @@ async function handlePP(sock, msg, chatId, text) {
         });
         return;
     }
-    
+
     await sock.sendMessage(chatId, { text: `Mengubah PP ke ${args}...` });
-    
+
     const result = await forceChangePP(sock, ppType);
-    
+
     await sock.sendMessage(chatId, {
       text: `✅ PP berhasil diganti!\n\nTipe: ${result.name}\nFile: ${result.fileName}`,
     });
-    
+
   } catch (error) {
     console.error("Error handling PP command:", error);
     await sock.sendMessage(chatId, { text: `Gagal mengganti PP: ${error.message}` });
@@ -619,69 +621,69 @@ async function handleLibur(sock, chatId, text) {
     const args = text.replace(".libur", "").trim();
     const parts = args.split(/\s+/);
     const action = parts[0]?.toLowerCase();
-    
+
     if (!action || action === "list") {
       const liburList = getLiburList();
       const entries = Object.entries(liburList).sort((a, b) => a[0].localeCompare(b[0]));
-      
+
       if (entries.length === 0) {
         await sock.sendMessage(chatId, { text: "Tidak ada hari libur yang terdaftar." });
         return;
       }
-      
+
       let listText = "📅 *Daftar Hari Libur Nasional*\n\n";
       for (const [tanggal, keterangan] of entries) {
         listText += `• ${tanggal}: ${keterangan}\n`;
       }
-      
+
       listText += "\n*Perintah:*\n";
       listText += ".libur list - Lihat daftar\n";
       listText += ".libur tambah YYYY-MM-DD Keterangan\n";
       listText += ".libur hapus YYYY-MM-DD";
-      
+
       await sock.sendMessage(chatId, { text: listText });
       return;
     }
-    
+
     if (action === "tambah" || action === "add") {
       const tanggal = parts[1];
       const keterangan = parts.slice(2).join(" ");
-      
+
       if (!tanggal || !keterangan) {
         await sock.sendMessage(chatId, {
           text: "Format: .libur tambah YYYY-MM-DD Keterangan\n\nContoh:\n.libur tambah 2025-12-31 Malam Tahun Baru",
         });
         return;
       }
-      
+
       const result = addLibur(tanggal, keterangan);
       await sock.sendMessage(chatId, {
         text: `✅ Hari libur berhasil ditambahkan!\n\nTanggal: ${result.tanggal}\nKeterangan: ${result.keterangan}`,
       });
       return;
     }
-    
+
     if (action === "hapus" || action === "delete" || action === "remove") {
       const tanggal = parts[1];
-      
+
       if (!tanggal) {
         await sock.sendMessage(chatId, {
           text: "Format: .libur hapus YYYY-MM-DD\n\nContoh:\n.libur hapus 2025-12-31",
         });
         return;
       }
-      
+
       const result = removeLibur(tanggal);
       await sock.sendMessage(chatId, {
         text: `✅ Hari libur berhasil dihapus!\n\nTanggal: ${result.tanggal}\nKeterangan: ${result.keterangan}`,
       });
       return;
     }
-    
+
     await sock.sendMessage(chatId, {
       text: "Perintah tidak dikenal.\n\nGunakan:\n.libur list - Lihat daftar\n.libur tambah YYYY-MM-DD Keterangan\n.libur hapus YYYY-MM-DD",
     });
-    
+
   } catch (error) {
     console.error("Error handling libur command:", error);
     await sock.sendMessage(chatId, { text: `Gagal: ${error.message}` });
@@ -691,7 +693,7 @@ async function handleLibur(sock, chatId, text) {
 async function handleGantiPP(sock, msg, chatId, text) {
   try {
     const args = text.replace(".gantipp", "").trim().toLowerCase();
-    
+
     let ppType;
     switch (args) {
       case "malam":
@@ -712,19 +714,19 @@ async function handleGantiPP(sock, msg, chatId, text) {
         });
         return;
     }
-    
+
     const message = msg.message;
     const hasImage = message?.imageMessage || message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage;
-    
+
     if (!hasImage) {
       await sock.sendMessage(chatId, {
         text: "Kirim gambar baru dengan caption .gantipp malam/siang/khusus\n\nAtau reply gambar dengan caption yang sama.",
       });
       return;
     }
-    
+
     await sock.sendMessage(chatId, { text: "Mengunduh gambar..." });
-    
+
     let imageMessage;
     if (message?.imageMessage) {
       imageMessage = msg;
@@ -734,17 +736,17 @@ async function handleGantiPP(sock, msg, chatId, text) {
         message: quotedMsg,
       };
     }
-    
+
     const buffer = await downloadMediaMessage(imageMessage, "buffer", {});
-    
+
     await sock.sendMessage(chatId, { text: "Menyimpan gambar..." });
-    
+
     const result = await replacePPImage(ppType, buffer);
-    
+
     await sock.sendMessage(chatId, {
       text: `✅ Gambar PP berhasil diganti!\n\nTipe: ${result.name}\nFile: ${result.fileName}\n\nGunakan .pp ${args} untuk menerapkan sekarang.`,
     });
-    
+
   } catch (error) {
     console.error("Error handling gantipp command:", error);
     await sock.sendMessage(chatId, { text: `Gagal mengganti gambar PP: ${error.message}` });
@@ -761,7 +763,7 @@ const TIMEZONE_MAP = {
 async function handleJadwal(sock, chatId, text) {
   try {
     const args = text.replace(".jadwal", "").trim();
-    
+
     if (!args || args === "help") {
       const templates = getAvailableJadwalTemplates();
       await sock.sendMessage(chatId, {
@@ -793,14 +795,14 @@ ${templates.map(t => `- $ ${t}`).join("\n")}
       });
       return;
     }
-    
+
     if (args === "list") {
       const activeSchedules = await getActiveScheduledMessages(chatId);
       if (activeSchedules.length === 0) {
         await sock.sendMessage(chatId, { text: "Tidak ada jadwal pesan aktif." });
         return;
       }
-      
+
       let listText = "*Jadwal Pesan Aktif:*\n\n";
       for (const schedule of activeSchedules) {
         const scheduledMoment = moment(schedule.scheduledTime).tz(TIMEZONE_MAP[schedule.timezone] || "UTC");
@@ -811,36 +813,36 @@ ${templates.map(t => `- $ ${t}`).join("\n")}
         listText += `Jumlah: ${schedule.sentCount}/${schedule.sendCount}\n\n`;
       }
       listText += "Batalkan dengan: .jadwal batal <id>";
-      
+
       await sock.sendMessage(chatId, { text: listText });
       return;
     }
-    
+
     if (args.startsWith("batal ") || args.startsWith("cancel ")) {
       const idStr = args.replace(/^(batal|cancel)\s+/, "").trim();
       const id = parseInt(idStr);
-      
+
       if (isNaN(id)) {
         await sock.sendMessage(chatId, { text: "ID tidak valid. Gunakan angka." });
         return;
       }
-      
+
       await cancelScheduledMessage(id);
       await sock.sendMessage(chatId, { text: `Jadwal dengan ID ${id} telah dibatalkan.` });
       return;
     }
-    
+
     const parts = args.split(";").map(p => p.trim());
-    
+
     if (parts.length < 3) {
       await sock.sendMessage(chatId, { 
         text: "Format tidak valid. Gunakan:\n.jadwal <nomor> ; <jumlah> ; <waktu> ; <pesan>\nAtau:\n.jadwal <nomor> ; <waktu> ; <pesan>\n\nKetik .jadwal help untuk bantuan." 
       });
       return;
     }
-    
+
     let nomorTujuan, jumlah, waktuStr, pesan;
-    
+
     if (parts.length === 3) {
       nomorTujuan = parts[0];
       jumlah = 1;
@@ -852,59 +854,59 @@ ${templates.map(t => `- $ ${t}`).join("\n")}
       waktuStr = parts[2];
       pesan = parts.slice(3).join(";").trim();
     }
-    
+
     if (!/^\d+$/.test(nomorTujuan)) {
       await sock.sendMessage(chatId, { text: "Nomor tujuan tidak valid. Gunakan format angka: 62xxx" });
       return;
     }
-    
+
     if (isNaN(jumlah) || jumlah < 1) {
       await sock.sendMessage(chatId, { text: "Jumlah harus berupa angka minimal 1." });
       return;
     }
-    
+
     if (jumlah > 100) {
       await sock.sendMessage(chatId, { text: "Maksimal 100 pesan per jadwal." });
       return;
     }
-    
+
     const timeMatch = waktuStr.match(/^(\d{1,2}):(\d{2}):(\d{2})\s+(\d{1,2})-(\d{1,2})-(\d{4})\s*\((\w+)\)$/);
-    
+
     if (!timeMatch) {
       await sock.sendMessage(chatId, { 
         text: "Format waktu tidak valid.\n\nGunakan: HH:MM:SS DD-MM-YYYY (ZONA)\nContoh: 11:03:56 28-11-2025 (WIT)" 
       });
       return;
     }
-    
+
     const [, jam, menit, detik, tanggal, bulan, tahun, timezone] = timeMatch;
     const tzUpper = timezone.toUpperCase();
-    
+
     if (!TIMEZONE_MAP[tzUpper]) {
       await sock.sendMessage(chatId, { 
         text: `Zona waktu "${timezone}" tidak dikenal.\n\nGunakan: UTC, WIB, WIT, atau WITA` 
       });
       return;
     }
-    
+
     const dateStr = `${tahun}-${bulan.padStart(2, "0")}-${tanggal.padStart(2, "0")} ${jam.padStart(2, "0")}:${menit}:${detik}`;
     const scheduledMoment = moment.tz(dateStr, "YYYY-MM-DD HH:mm:ss", TIMEZONE_MAP[tzUpper]);
-    
+
     if (!scheduledMoment.isValid()) {
       await sock.sendMessage(chatId, { text: "Tanggal/waktu tidak valid." });
       return;
     }
-    
+
     const now = moment();
     if (scheduledMoment.isBefore(now)) {
       await sock.sendMessage(chatId, { text: "Waktu jadwal sudah lewat. Gunakan waktu di masa depan." });
       return;
     }
-    
+
     const processedMessage = processJadwalMessage(pesan);
-    
+
     const scheduledTime = scheduledMoment.toDate();
-    
+
     const result = await createScheduledMessage(
       nomorTujuan,
       processedMessage,
@@ -913,9 +915,9 @@ ${templates.map(t => `- $ ${t}`).join("\n")}
       tzUpper,
       chatId
     );
-    
+
     const confirmMoment = moment(scheduledTime).tz(TIMEZONE_MAP[tzUpper]);
-    
+
     await sock.sendMessage(chatId, {
       text: `*Jadwal Pesan Dibuat*
 
@@ -928,7 +930,7 @@ Pesan: ${processedMessage}
 Pesan akan dikirim pada waktu yang ditentukan.
 Batalkan dengan: .jadwal batal ${result.id}`,
     });
-    
+
   } catch (error) {
     console.error("Error handling jadwal command:", error);
     await sock.sendMessage(chatId, { text: `Gagal membuat jadwal: ${error.message}` });
@@ -938,11 +940,11 @@ Batalkan dengan: .jadwal batal ${result.id}`,
 async function handleStealthMode(sock, chatId, text) {
   try {
     const args = text.toLowerCase().replace(".stealthmode", "").trim();
-    
+
     if (!args || args === "status") {
       const status = getStealthStatus();
       const statusEmoji = status.enabled ? "ON" : "OFF";
-      
+
       await sock.sendMessage(chatId, {
         text: `*Stealth Mode Status: ${statusEmoji}*\n\n` +
           `Ghost Read: ${status.features.ghostRead ? "ON" : "OFF"}\n` +
@@ -961,23 +963,23 @@ async function handleStealthMode(sock, chatId, text) {
       });
       return;
     }
-    
+
     if (args === "on") {
       const result = await enableStealthMode(sock);
       await sock.sendMessage(chatId, { text: result.message });
       return;
     }
-    
+
     if (args === "off") {
       const result = await disableStealthMode(sock);
       await sock.sendMessage(chatId, { text: result.message });
       return;
     }
-    
+
     await sock.sendMessage(chatId, {
       text: "Perintah tidak dikenal.\n\nGunakan:\n.stealthMode on - Aktifkan stealth mode\n.stealthMode off - Matikan stealth mode\n.stealthMode status - Lihat status"
     });
-    
+
   } catch (error) {
     console.error("Error handling stealthMode command:", error);
     await sock.sendMessage(chatId, { text: `Gagal: ${error.message}` });
