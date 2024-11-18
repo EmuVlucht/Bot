@@ -4,7 +4,7 @@ let presenceInterval = null;
 let originalMethods = {
   sendPresenceUpdate: null,
   readMessages: null,
-  sendReadReceipt: null,
+  sendReceipt: null,
 };
 let isInitialized = false;
 
@@ -22,7 +22,7 @@ export function initStealthMode(sock) {
   
   originalMethods.sendPresenceUpdate = sock.sendPresenceUpdate?.bind(sock);
   originalMethods.readMessages = sock.readMessages?.bind(sock);
-  originalMethods.sendReadReceipt = sock.sendReadReceipt?.bind(sock);
+  originalMethods.sendReceipt = sock.sendReceipt?.bind(sock);
   
   if (sock.sendPresenceUpdate) {
     sock.sendPresenceUpdate = async (type, toJid) => {
@@ -50,23 +50,25 @@ export function initStealthMode(sock) {
     };
   }
   
-  if (sock.sendReadReceipt) {
-    sock.sendReadReceipt = async (jid, participant, messageKeys) => {
+  if (sock.sendReceipt) {
+    sock.sendReceipt = async (jid, participant, messageIds, type) => {
       if (stealthModeEnabled) {
-        console.log(`[STEALTH] Blocked sendReadReceipt to ${jid}`);
-        return;
+        if (type === "read" || type === "read-self") {
+          console.log(`[STEALTH] Blocked sendReceipt (${type}) to ${jid}`);
+          return;
+        }
       }
-      if (originalMethods.sendReadReceipt) {
-        return originalMethods.sendReadReceipt(jid, participant, messageKeys);
+      if (originalMethods.sendReceipt) {
+        return originalMethods.sendReceipt(jid, participant, messageIds, type);
       }
     };
   }
   
   isInitialized = true;
   console.log("[STEALTH] Stealth mode module initialized with socket wrapper");
-  console.log("[STEALTH] - sendPresenceUpdate: wrapped");
-  console.log("[STEALTH] - readMessages: " + (sock.readMessages ? "wrapped" : "not available"));
-  console.log("[STEALTH] - sendReadReceipt: " + (sock.sendReadReceipt ? "wrapped" : "not available"));
+  console.log("[STEALTH] - sendPresenceUpdate: " + (sock.sendPresenceUpdate ? "wrapped" : "not available"));
+  console.log("[STEALTH] - readMessages: " + (originalMethods.readMessages ? "wrapped" : "not available"));
+  console.log("[STEALTH] - sendReceipt: " + (originalMethods.sendReceipt ? "wrapped" : "not available"));
 }
 
 export async function enableStealthMode(sock) {
@@ -92,13 +94,17 @@ export async function enableStealthMode(sock) {
     message: "*Stealth Mode ACTIVATED*\n\n" +
       "Ghost Read: ON\n" +
       "Ghost Online: ON\n" +
-      "Ghost Typing: ON\n" +
-      "Ghost Status View: ON\n\n" +
-      "Anda sekarang:\n" +
-      "- Tidak mengirim centang biru\n" +
-      "- Tidak terlihat online\n" +
-      "- Tidak mengirim indikator mengetik\n" +
-      "- Bisa melihat status tanpa ketahuan"
+      "Ghost Typing: ON\n\n" +
+      "Fitur ini berlaku untuk:\n" +
+      "- Aktivitas BOT (koneksi ini)\n" +
+      "- Bot tidak mengirim centang biru\n" +
+      "- Bot tidak terlihat online\n\n" +
+      "⚠️ *PENTING:*\n" +
+      "Stealth mode TIDAK bisa mengontrol aktivitas langsung di HP Anda!\n\n" +
+      "Untuk menyembunyikan aktivitas di HP:\n" +
+      "1. Buka WhatsApp > Settings > Privacy\n" +
+      "2. Matikan 'Read Receipts'\n" +
+      "3. Set 'Last Seen' ke 'Nobody'"
   };
 }
 
@@ -226,6 +232,13 @@ export function getStealthStatus() {
   };
 }
 
+export function getStealthConfig() {
+  return {
+    markOnlineOnConnect: !stealthModeEnabled,
+    syncFullHistory: false,
+  };
+}
+
 export function cleanupStealthMode() {
   stopPresenceLoop();
   stealthModeEnabled = false;
@@ -239,9 +252,9 @@ export function cleanupStealthMode() {
       stealthSock.readMessages = originalMethods.readMessages;
       console.log("[STEALTH] Restored readMessages");
     }
-    if (originalMethods.sendReadReceipt) {
-      stealthSock.sendReadReceipt = originalMethods.sendReadReceipt;
-      console.log("[STEALTH] Restored sendReadReceipt");
+    if (originalMethods.sendReceipt) {
+      stealthSock.sendReceipt = originalMethods.sendReceipt;
+      console.log("[STEALTH] Restored sendReceipt");
     }
   }
   
@@ -249,7 +262,7 @@ export function cleanupStealthMode() {
   originalMethods = {
     sendPresenceUpdate: null,
     readMessages: null,
-    sendReadReceipt: null,
+    sendReceipt: null,
   };
   isInitialized = false;
   console.log("[STEALTH] Stealth mode cleaned up");
