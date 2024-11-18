@@ -27,6 +27,7 @@ import {
   formatInterval,
 } from "./utils.js";
 import { findAutoReply } from "./autoReply.js";
+import { getTemplate, getAvailableTemplates } from "./kirimTemplates.js";
 
 export function setupMessageHandler(sock) {
   sock.ev.on("messages.upsert", async ({ messages, type }) => {
@@ -79,6 +80,11 @@ async function handleMessage(sock, msg) {
         return;
       }
       
+      if (text.startsWith(".kirim")) {
+        await handleKirim(sock, chatId, text);
+        return;
+      }
+      
       if (isGroup && text.startsWith(config.prefix)) {
         await handleCommand(sock, msg, chatId, sender, text, true);
       }
@@ -90,6 +96,11 @@ async function handleMessage(sock, msg) {
       const loopCmd = parseLoopCommand(text);
       if (loopCmd) {
         await handleLoopCommand(sock, chatId, loopCmd);
+        return;
+      }
+      
+      if (text.startsWith(".kirim")) {
+        await handleKirim(sock, chatId, text);
         return;
       }
     }
@@ -409,5 +420,87 @@ async function handleRebase(sock, msg, groupId, dataText) {
   } catch (error) {
     console.error("Error rebasing data:", error);
     await sock.sendMessage(groupId, { text: "Gagal menambahkan data." });
+  }
+}
+
+async function handleKirim(sock, chatId, text) {
+  try {
+    const parts = text.replace(".kirim", "").trim().split(/\s+/);
+    
+    if (parts.length < 3 || (parts.length === 1 && parts[0] === "")) {
+      const templates = getAvailableTemplates();
+      await sock.sendMessage(chatId, {
+        text: `Format: .kirim <jenis> <jumlah> <nomor>\n\nContoh:\n.kirim salam 10 62797889\n\nTemplate tersedia:\n${templates.map(t => `- ${t}`).join("\n")}\n\nAtau gunakan pesan kustom:\n.kirim "Pesanmu di sini" 5 62797889`,
+      });
+      return;
+    }
+    
+    let jenis, jumlah, nomorTujuan, pesanKirim;
+    
+    const customMatch = text.match(/\.kirim\s+"([^"]+)"\s+(\d+)\s+(\d+)/);
+    if (customMatch) {
+      pesanKirim = customMatch[1];
+      jumlah = parseInt(customMatch[2]);
+      nomorTujuan = customMatch[3];
+    } else {
+      jenis = parts[0];
+      jumlah = parseInt(parts[1]);
+      nomorTujuan = parts[2];
+      
+      pesanKirim = getTemplate(jenis);
+      if (!pesanKirim) {
+        const templates = getAvailableTemplates();
+        await sock.sendMessage(chatId, {
+          text: `Jenis "${jenis}" tidak ditemukan.\n\nTemplate tersedia:\n${templates.map(t => `- ${t}`).join("\n")}\n\nAtau gunakan pesan kustom:\n.kirim "Pesanmu di sini" 5 62797889`,
+        });
+        return;
+      }
+    }
+    
+    if (isNaN(jumlah) || jumlah < 1) {
+      await sock.sendMessage(chatId, { text: "Jumlah harus berupa angka minimal 1." });
+      return;
+    }
+    
+    if (jumlah > 100) {
+      await sock.sendMessage(chatId, { text: "Maksimal 100 pesan per perintah." });
+      return;
+    }
+    
+    if (!nomorTujuan || !/^\d+$/.test(nomorTujuan)) {
+      await sock.sendMessage(chatId, { text: "Nomor tujuan tidak valid. Gunakan format: 62xxx" });
+      return;
+    }
+    
+    const targetJid = `${nomorTujuan}@s.whatsapp.net`;
+    
+    await sock.sendMessage(chatId, {
+      text: `Mengirim "${pesanKirim}" sebanyak ${jumlah}x ke ${nomorTujuan}...`,
+    });
+    
+    let sukses = 0;
+    let gagal = 0;
+    
+    for (let i = 0; i < jumlah; i++) {
+      try {
+        await sock.sendMessage(targetJid, { text: pesanKirim });
+        sukses++;
+        
+        if (jumlah > 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      } catch (err) {
+        console.error(`Error sending message ${i + 1}:`, err);
+        gagal++;
+      }
+    }
+    
+    await sock.sendMessage(chatId, {
+      text: `Selesai!\nBerhasil: ${sukses}\nGagal: ${gagal}`,
+    });
+    
+  } catch (error) {
+    console.error("Error handling kirim:", error);
+    await sock.sendMessage(chatId, { text: "Gagal mengirim pesan." });
   }
 }
