@@ -1,5 +1,5 @@
 import { db } from "./db.js";
-import { groups, checkpointData, liveMessages, loopMessages, messageTracking } from "../shared/schema.js";
+import { groups, checkpointData, liveMessages, loopMessages, messageTracking, scheduledMessages } from "../shared/schema.js";
 import { eq, and, lte } from "drizzle-orm";
 
 export async function initGroup(groupId, groupName) {
@@ -370,5 +370,76 @@ export async function decrementCounter(groupId, type) {
     .set(updateObj)
     .where(eq(checkpointData.groupId, groupId));
 
+  return true;
+}
+
+export async function createScheduledMessage(targetNumber, message, sendCount, scheduledTime, timezone, creatorChatId) {
+  const result = await db.insert(scheduledMessages).values({
+    targetNumber,
+    message,
+    sendCount,
+    sentCount: 0,
+    scheduledTime,
+    timezone,
+    creatorChatId,
+    isActive: true,
+    isCompleted: false,
+  }).returning();
+  
+  return result[0];
+}
+
+export async function getDueScheduledMessages() {
+  const now = new Date();
+  const msgs = await db
+    .select()
+    .from(scheduledMessages)
+    .where(and(
+      eq(scheduledMessages.isActive, true),
+      eq(scheduledMessages.isCompleted, false),
+      lte(scheduledMessages.scheduledTime, now)
+    ));
+  
+  return msgs;
+}
+
+export async function updateScheduledMessageAfterSend(id, currentSentCount, totalCount) {
+  const newSentCount = currentSentCount + 1;
+  
+  if (newSentCount >= totalCount) {
+    await db
+      .update(scheduledMessages)
+      .set({ sentCount: newSentCount, isCompleted: true })
+      .where(eq(scheduledMessages.id, id));
+    return { completed: true, sentCount: newSentCount };
+  }
+  
+  await db
+    .update(scheduledMessages)
+    .set({ sentCount: newSentCount })
+    .where(eq(scheduledMessages.id, id));
+  
+  return { completed: false, sentCount: newSentCount };
+}
+
+export async function getActiveScheduledMessages(creatorChatId) {
+  const msgs = await db
+    .select()
+    .from(scheduledMessages)
+    .where(and(
+      eq(scheduledMessages.creatorChatId, creatorChatId),
+      eq(scheduledMessages.isActive, true),
+      eq(scheduledMessages.isCompleted, false)
+    ));
+  
+  return msgs;
+}
+
+export async function cancelScheduledMessage(id) {
+  await db
+    .update(scheduledMessages)
+    .set({ isActive: false })
+    .where(eq(scheduledMessages.id, id));
+  
   return true;
 }
