@@ -159,7 +159,7 @@ const setname = async (conn, m, ctx) => {
     const { text, botSettings } = ctx;
     if (!text) return m.reply('Masukkan nama bot baru!');
     
-    const { jidNormalizedUser } = require('@whiskeysockets/baileys');
+    const { jidNormalizedUser } = require('baileys');
     await updateBotSettings(jidNormalizedUser(conn.user.id), { botName: text });
     await m.reply(`Nama bot diubah menjadi: ${text}`);
 };
@@ -170,7 +170,7 @@ const setauthor = async (conn, m, ctx) => {
     const { text } = ctx;
     if (!text) return m.reply('Masukkan nama author baru!');
     
-    const { jidNormalizedUser } = require('@whiskeysockets/baileys');
+    const { jidNormalizedUser } = require('baileys');
     await updateBotSettings(jidNormalizedUser(conn.user.id), { author: text });
     await m.reply(`Author diubah menjadi: ${text}`);
 };
@@ -181,7 +181,7 @@ const setpackname = async (conn, m, ctx) => {
     const { text } = ctx;
     if (!text) return m.reply('Masukkan packname sticker baru!');
     
-    const { jidNormalizedUser } = require('@whiskeysockets/baileys');
+    const { jidNormalizedUser } = require('baileys');
     await updateBotSettings(jidNormalizedUser(conn.user.id), { packname: text });
     await m.reply(`Packname diubah menjadi: ${text}`);
 };
@@ -189,7 +189,7 @@ const setpackname = async (conn, m, ctx) => {
 const setpublic = async (conn, m, ctx) => {
     if (!ctx.isOwner) return m.reply(settings.messages.owner);
     
-    const { jidNormalizedUser } = require('@whiskeysockets/baileys');
+    const { jidNormalizedUser } = require('baileys');
     await updateBotSettings(jidNormalizedUser(conn.user.id), { public: true });
     conn.public = true;
     await m.reply('Bot sekarang dalam mode Public!');
@@ -198,7 +198,7 @@ const setpublic = async (conn, m, ctx) => {
 const setself = async (conn, m, ctx) => {
     if (!ctx.isOwner) return m.reply(settings.messages.owner);
     
-    const { jidNormalizedUser } = require('@whiskeysockets/baileys');
+    const { jidNormalizedUser } = require('baileys');
     await updateBotSettings(jidNormalizedUser(conn.user.id), { public: false });
     conn.public = false;
     await m.reply('Bot sekarang dalam mode Self!');
