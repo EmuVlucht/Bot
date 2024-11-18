@@ -340,17 +340,21 @@ async function countMessage(groupId, msg, content) {
           messageType = "audio";
         }
         break;
+      case "image":
+      case "video":
+      case "media":
+        if (content.viewOnce) {
+          messageType = "oneTime";
+        } else {
+          messageType = "media";
+        }
+        break;
       case "sticker":
       case "gif":
         messageType = "sticker";
         break;
       case "doc":
         messageType = "doc";
-        break;
-      case "image":
-      case "video":
-      case "media":
-        messageType = "media";
         break;
       case "statusMention":
         messageType = "sw";
