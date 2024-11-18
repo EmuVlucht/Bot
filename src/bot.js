@@ -26,6 +26,7 @@ import {
   parseLoopCommand,
   formatInterval,
 } from "./utils.js";
+import { findAutoReply } from "./autoReply.js";
 
 export function setupMessageHandler(sock) {
   sock.ev.on("messages.upsert", async ({ messages, type }) => {
@@ -91,6 +92,12 @@ async function handleMessage(sock, msg) {
         await handleLoopCommand(sock, chatId, loopCmd);
         return;
       }
+    }
+
+    const autoReplyText = findAutoReply(text);
+    if (autoReplyText) {
+      await sock.sendMessage(chatId, { text: autoReplyText });
+      console.log(`[AUTO-REPLY] "${text}" -> "${autoReplyText}"`);
     }
 
     if (!isGroup) return;
