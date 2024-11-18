@@ -334,12 +334,13 @@ async function connectToWhatsApp() {
         if (sock.user && currentSock === sock) {
           console.log("[INIT] Koneksi stabil, mengaktifkan fitur...");
           
-          try {
-            initStealthMode(sock);
-            console.log("[INIT] Stealth mode module ready");
-          } catch (e) {
-            console.log("[INIT] Stealth mode init skipped:", e.message);
-          }
+          // STEALTH MODE DISABLED FOR DEBUGGING
+          // try {
+          //   initStealthMode(sock);
+          //   console.log("[INIT] Stealth mode module ready");
+          // } catch (e) {
+          //   console.log("[INIT] Stealth mode init skipped:", e.message);
+          // }
           
           setupMessageHandler(sock);
           setupCronJobs(sock);
