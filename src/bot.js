@@ -460,6 +460,9 @@ async function countMessage(groupId, msg, content) {
 
   if (content.viewOnce || content.type === "viewOnce") {
     messageType = "oneTime";
+  } else if (content.quotedViewOnce?.detected) {
+    messageType = "oneTime";
+    console.log(`[1×] Counting quoted view-once message as oneTime`);
   } else if (containsLink(content.text)) {
     messageType = "link";
   } else {
