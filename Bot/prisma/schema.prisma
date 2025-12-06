@@ -1,0 +1,201 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x", "linux-musl-arm64-openssl-3.0.x", "debian-openssl-3.0.x", "linux-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  jid         String   @unique
+  name        String?
+  vip         Boolean  @default(false)
+  ban         Boolean  @default(false)
+  limit       Int      @default(20)
+  money       BigInt   @default(10000)
+  afkTime     BigInt   @default(-1)
+  afkReason   String   @default("")
+  register    Boolean  @default(false)
+  lastclaim   BigInt   @default(0)
+  lastbegal   BigInt   @default(0)
+  lastrampok  BigInt   @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([jid])
+}
+
+model Group {
+  id            String   @id @default(uuid())
+  jid           String   @unique
+  name          String?
+  url           String   @default("")
+  nsfw          Boolean  @default(false)
+  mute          Boolean  @default(false)
+  leave         Boolean  @default(false)
+  setinfo       Boolean  @default(false)
+  antilink      Boolean  @default(false)
+  demote        Boolean  @default(false)
+  antitoxic     Boolean  @default(false)
+  promote       Boolean  @default(false)
+  welcome       Boolean  @default(false)
+  antivirtex    Boolean  @default(false)
+  antitagsw     Boolean  @default(false)
+  antidelete    Boolean  @default(false)
+  antihidetag   Boolean  @default(false)
+  waktusholat   Boolean  @default(false)
+  textWelcome   String?
+  textLeave     String?
+  textPromote   String?
+  textDemote    String?
+  warns         Json     @default("{}")
+  tagsw         Json     @default("{}")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([jid])
+}
+
+model BotSettings {
+  id            String   @id @default(uuid())
+  botJid        String   @unique
+  lang          String   @default("id")
+  limit         Int      @default(0)
+  money         BigInt   @default(0)
+  status        BigInt   @default(0)
+  join          Boolean  @default(false)
+  public        Boolean  @default(true)
+  anticall      Boolean  @default(true)
+  original      Boolean  @default(true)
+  readsw        Boolean  @default(false)
+  autobio       Boolean  @default(false)
+  autoread      Boolean  @default(true)
+  antispam      Boolean  @default(false)
+  autotyping    Boolean  @default(true)
+  grouponly     Boolean  @default(true)
+  multiprefix   Boolean  @default(false)
+  privateonly   Boolean  @default(true)
+  autobackup    Boolean  @default(false)
+  author        String   @default("Nazedev")
+  botname       String   @default("Naze Bot")
+  packname      String   @default("Bot WhatsApp")
+  template      String   @default("documentMessage")
+  owners        Json     @default("[]")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([botJid])
+}
+
+model Premium {
+  id        String   @id @default(uuid())
+  jid       String   @unique
+  expired   BigInt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([jid])
+}
+
+model Sewa {
+  id        String   @id @default(uuid())
+  jid       String   @unique
+  expired   BigInt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([jid])
+}
+
+model CommandHit {
+  id        String   @id @default(uuid())
+  command   String   @unique
+  count     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([command])
+}
+
+model TotalHit {
+  id        String   @id @default(uuid())
+  botJid    String   @unique
+  totalcmd  Int      @default(0)
+  todaycmd  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([botJid])
+}
+
+model GameSession {
+  id        String   @id @default(uuid())
+  chatJid   String
+  gameType  String
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([chatJid, gameType])
+  @@index([chatJid])
+  @@index([gameType])
+}
+
+model Store {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+}
+
+model AuthSession {
+  id        String   @id @default(uuid())
+  sessionId String   @unique
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sessionId])
+}
+
+model Message {
+  id          String   @id @default(uuid())
+  messageId   String
+  chatJid     String
+  senderJid   String
+  content     Json
+  timestamp   BigInt
+  createdAt   DateTime @default(now())
+
+  @@unique([messageId, chatJid])
+  @@index([chatJid])
+  @@index([senderJid])
+  @@index([timestamp])
+}
+
+model Contact {
+  id        String   @id @default(uuid())
+  jid       String   @unique
+  name      String?
+  lid       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([jid])
+}
+
+model GroupMetadata {
+  id        String   @id @default(uuid())
+  jid       String   @unique
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([jid])
+}

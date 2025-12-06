@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  bot:
+    build: .
+    container_name: naze-bot
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - BOT_NUMBER=${BOT_NUMBER}
+      - OWNER_NUMBER=${OWNER_NUMBER}
+    volumes:
+      - ./nazedev:/app/nazedev
+      - ./database:/app/database
+    depends_on:
+      - postgres
+    networks:
+      - naze-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: naze-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: naze
+      POSTGRES_PASSWORD: nazebot123
+      POSTGRES_DB: nazebot
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - naze-network
+
+networks:
+  naze-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
