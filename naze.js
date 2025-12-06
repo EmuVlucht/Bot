@@ -33,7 +33,7 @@ const speed = require('performance-now');
 const didYouMean = require('didyoumean');
 const { performance } = require('perf_hooks');
 const moment = require('moment-timezone');
-const { translate } = require('@vitalets/google-translate-api');
+const translate = require('translate-google-api');
 const { Akinator, AkinatorAnswer } = require('aki-api');
 const PhoneNum = require('awesome-phonenumber');
 const { exec, spawn, execSync } = require('child_process');
@@ -2057,8 +2057,8 @@ module.exports = naze = async (naze, m, msg, store) => {
                                         let lang = args[0] ? args[0] : 'id'
                                         let teks = args[1] ? args.slice(1).join(' ') : m.quoted.text
                                         try {
-                                                let hasil = await translate(teks, { to: lang })
-                                                m.reply(`To : ${lang}\n${hasil.text}`)
+                                                let hasil = await translate(teks, { to: lang, autoCorrect: true })
+                                                m.reply(`To : ${lang}\n${hasil[0]}`)
                                         } catch (e) {
                                                 m.reply(`Lang *${lang}* Tidak Di temukan!\nSilahkan lihat list, ${prefix + command} list`)
                                         }

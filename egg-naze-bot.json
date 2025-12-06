@@ -61,7 +61,7 @@
     {
       "name": "Database URL",
       "description": "PostgreSQL connection string",
-      "env_variable": "EXTERNAL_DATABASE_URL",
+      "env_variable": "DATABASE_URL",
       "default_value": "",
       "user_viewable": true,
       "user_editable": true,

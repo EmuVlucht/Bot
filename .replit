@@ -1,1 +1,11 @@
 modules = ["nodejs-20"]
+
+[userenv]
+
+[userenv.shared]
+NODE_ENV = "production"
+PORT = "5000"
+
+[nix]
+channel = "stable-25_05"
+packages = ["ffmpeg", "imagemagick", "libwebp"]

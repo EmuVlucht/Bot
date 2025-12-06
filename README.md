@@ -50,7 +50,7 @@ cp .env.example .env
 Edit `.env` dengan konfigurasi kamu:
 
 ```env
-EXTERNAL_DATABASE_URL=postgresql://user:password@host:5432/database
+DATABASE_URL=postgresql://user:password@host:5432/database
 BOT_NUMBER=62xxxxxxxxxx
 OWNER_NUMBER=62xxxxxxxxxx
 ```
@@ -79,7 +79,7 @@ npm start
 3. Connect dengan GitHub repo
 4. Tambahkan PostgreSQL addon
 5. Set environment variables:
-   - `EXTERNAL_DATABASE_URL` (atau gunakan PostgreSQL addon Railway)
+   - `DATABASE_URL` (otomatis dari PostgreSQL addon)
    - `BOT_NUMBER`
    - `OWNER_NUMBER`
 6. Deploy!
@@ -91,7 +91,7 @@ npm start
 1. Fork repository ke Replit
 2. Buat PostgreSQL database (atau gunakan external)
 3. Set Secrets:
-   - `EXTERNAL_DATABASE_URL`
+   - `DATABASE_URL`
    - `BOT_NUMBER`
    - `OWNER_NUMBER`
 4. Run!
@@ -169,7 +169,7 @@ docker-compose logs -f bot
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `EXTERNAL_DATABASE_URL` | PostgreSQL connection string | ✅ |
+| `DATABASE_URL` | PostgreSQL connection string | ✅ |
 | `BOT_NUMBER` | Nomor WhatsApp bot (tanpa +) | ❌ |
 | `OWNER_NUMBER` | Nomor owner (pisahkan dengan koma) | ❌ |
 | `AUTHOR_NAME` | Nama author untuk stiker | ❌ |

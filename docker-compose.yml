@@ -9,7 +9,7 @@ services:
       - "5000:5000"
     environment:
       - NODE_ENV=production
-      - EXTERNAL_DATABASE_URL=${EXTERNAL_DATABASE_URL}
+      - DATABASE_URL=${DATABASE_URL}
       - BOT_NUMBER=${BOT_NUMBER}
       - OWNER_NUMBER=${OWNER_NUMBER}
     volumes:

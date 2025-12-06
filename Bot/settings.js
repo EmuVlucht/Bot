@@ -80,8 +80,8 @@ global.APIs = {
 };
 
 global.APIKeys = {
-    'https://api.hitori.pw': process.env.HITORI_API_KEY || 'htrkey-77eb83c0eeb39d40',
-    geminiApikey: (process.env.GEMINI_API_KEY || 'AIzaSyD0lkGz6ZhKi_MHSSmJcCX3wXoDZhELPaQ').split(',')
+    'https://api.hitori.pw': process.env.HITORI_API_KEY || '',
+    geminiApikey: (process.env.GEMINI_API_KEY || '').split(',').filter(k => k)
 };
 
 global.badWords = ['tolol', 'goblok', 'asu', 'pantek', 'kampret', 'ngentot', 'jancok', 'kontol', 'memek', 'lonte'];
