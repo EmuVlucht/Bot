@@ -77,13 +77,14 @@ async function startCielBot() {
         version,
         logger: pinoLogger,
         getMessage,
+        printQRInTerminal: false,
         syncFullHistory: true,
         maxMsgRetryCount: 15,
         msgRetryCounterCache,
         retryRequestDelayMs: 10,
         defaultQueryTimeoutMs: 0,
         connectTimeoutMs: 60000,
-        browser: Browsers.ubuntu('Chrome'),
+        browser: Browsers.macOS('Chrome'),
         generateHighQualityLinkPreview: true,
         shouldSyncHistoryMessage: (msg) => {
             logger.info(`Memuat Chat [${msg.progress || 0}%]`);
