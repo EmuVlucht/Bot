@@ -215,43 +215,97 @@ const tw = twitter;
 const x = twitter;
 
 const youtube = async (conn, m, { text }) => {
-    if (!text) return m.reply('Masukkan link atau judul YouTube!\nContoh: .youtube https://youtu.be/xxx');
+    if (!text) return m.reply('Masukkan link atau judul YouTube!\nContoh: .yt https://youtu.be/xxx');
     
     await m.reply(settings.messages.wait);
     
     try {
+        let videoUrl = text;
         let videoId = null;
         
+        // Extract video ID from URL
         if (text.includes('youtube.com') || text.includes('youtu.be')) {
             const match = text.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
             if (match) videoId = match[1];
         }
         
+        // If not a URL, search for the video
         if (!videoId) {
-            const searchResponse = await axios.get(`https://www.googleapis.com/youtube/v3/search`, {
-                params: {
-                    part: 'snippet',
-                    q: text,
-                    type: 'video',
-                    maxResults: 1,
-                    key: settings.apis.youtube || process.env.YOUTUBE_API_KEY
+            const apiKey = settings.apis?.youtube || process.env.YOUTUBE_API_KEY;
+            if (apiKey) {
+                const searchResponse = await axios.get(`https://www.googleapis.com/youtube/v3/search`, {
+                    params: {
+                        part: 'snippet',
+                        q: text,
+                        type: 'video',
+                        maxResults: 1,
+                        key: apiKey
+                    }
+                });
+                
+                if (searchResponse.data.items && searchResponse.data.items.length > 0) {
+                    videoId = searchResponse.data.items[0].id.videoId;
+                    videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
                 }
-            });
-            
-            if (searchResponse.data.items && searchResponse.data.items.length > 0) {
-                videoId = searchResponse.data.items[0].id.videoId;
             }
         }
         
-        if (!videoId) {
-            return m.reply('Video tidak ditemukan!');
+        if (!videoId && !text.includes('youtube.com') && !text.includes('youtu.be')) {
+            return m.reply('Video tidak ditemukan! Coba gunakan link YouTube langsung.');
         }
         
-        m.reply(`*🎬 YouTube*\n\nVideo ID: ${videoId}\n\nFitur YouTube membutuhkan API tambahan. Silakan hubungi owner untuk mengaktifkan downloader YouTube.`);
+        if (videoId) {
+            videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+        }
+        
+        // Try download using API
+        const downloadApis = [
+            async () => {
+                const res = await axios.get(`https://api.agatz.xyz/api/ytmp4?url=${encodeURIComponent(videoUrl)}`, { timeout: 30000 });
+                if (res.data?.data?.dl) return { url: res.data.data.dl, title: res.data.data.title };
+                throw new Error('No download link');
+            },
+            async () => {
+                const res = await axios.get(`https://api.vreden.my.id/api/ytmp4?url=${encodeURIComponent(videoUrl)}`, { timeout: 30000 });
+                if (res.data?.result?.download?.url) return { url: res.data.result.download.url, title: res.data.result.title };
+                throw new Error('No download link');
+            },
+            async () => {
+                const res = await axios.get(`https://api.neoxr.eu/api/youtube?url=${encodeURIComponent(videoUrl)}&type=video`, { timeout: 30000 });
+                if (res.data?.data?.url) return { url: res.data.data.url, title: res.data.data.title };
+                throw new Error('No download link');
+            }
+        ];
+        
+        let downloadResult = null;
+        for (const api of downloadApis) {
+            try {
+                downloadResult = await api();
+                if (downloadResult?.url) break;
+            } catch (err) {
+                console.log('YouTube API failed, trying next...');
+            }
+        }
+        
+        if (!downloadResult?.url) {
+            return m.reply(`*🎬 YouTube*\n\nLink: ${videoUrl}\n\nMaaf, server download sedang sibuk. Coba lagi nanti atau gunakan link langsung di browser.`);
+        }
+        
+        // Download and send video
+        const videoBuffer = await axios.get(downloadResult.url, { 
+            responseType: 'arraybuffer',
+            timeout: 120000,
+            maxContentLength: 100 * 1024 * 1024 // 100MB max
+        });
+        
+        await conn.sendMessage(m.chat, {
+            video: Buffer.from(videoBuffer.data),
+            caption: `*🎬 YouTube Download*\n\n*Title:* ${downloadResult.title || 'Unknown'}`
+        }, { quoted: m });
         
     } catch (e) {
         console.error('YouTube error:', e);
-        m.reply('Gagal memproses video YouTube! Coba lagi nanti.');
+        m.reply('Gagal download video YouTube! Video mungkin terlalu besar atau link tidak valid.');
     }
 };
 
