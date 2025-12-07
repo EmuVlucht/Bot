@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 module.exports = {
-    owner: process.env.OWNER_NUMBER ? process.env.OWNER_NUMBER.split(',') : ['6285924800010'],
+    owner: process.env.OWNER_NUMBER ? process.env.OWNER_NUMBER.split(',') : ['6282184389697'],
     
     botInfo: {
         name: process.env.BOT_NAME || 'Ciel Bot',

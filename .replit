@@ -5,6 +5,7 @@ expertMode = true
 
 [nix]
 channel = "stable-25_05"
+packages = ["nano"]
 
 [workflows]
 runButton = "Project"
@@ -34,7 +35,12 @@ waitForPort = 5000
 localPort = 5000
 externalPort = 80
 
+[[ports]]
+localPort = 37261
+externalPort = 3000
+
 [userenv]
 
 [userenv.shared]
 RAILWAY_DATABASE_URL = "postgresql://postgres:VSktFuvpEIgHCnIDpNnXXnCSZlotLNUI@shinkansen.proxy.rlwy.net:22870/railway"
+YOUTUBE_API_KEY = "AIzaSyAoikeSD77TXqqIG2DyifYjXjNVEWWQxKQ"
